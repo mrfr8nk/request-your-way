@@ -1,0 +1,745 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { Users, Search, GraduationCap, BookOpen, Shield, Trash2, Eye, ArrowUpDown, Mail, Phone, Save, Edit, UserX, UserCheck, Link2, Unlink, UserPlus, CheckSquare, Square, Ban, ShieldOff, KeyRound } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import ExportDropdown from "@/components/ExportDropdown";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const AdminUsers = () => {
+  const [linkSearchQuery, setLinkSearchQuery] = useState("");
+  const { toast } = useToast();
+  const [users, setUsers] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [studentProfiles, setStudentProfiles] = useState<any[]>([]);
+  const [teacherProfiles, setTeacherProfiles] = useState<any[]>([]);
+  const [parentLinks, setParentLinks] = useState<any[]>([]);
+  const [sortField, setSortField] = useState<string>("full_name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editingSP, setEditingSP] = useState(false);
+  const [spForm, setSpForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [linkStudentId, setLinkStudentId] = useState("");
+  const [linking, setLinking] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [resetPwOpen, setResetPwOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [resettingPw, setResettingPw] = useState(false);
+
+  const handleResetPassword = async (userId: string) => {
+    if (!newPassword || newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    setResettingPw(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ user_id: userId, new_password: newPassword }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to reset password');
+      toast({ title: "Success", description: "Password has been reset successfully." });
+      setNewPassword("");
+      setResetPwOpen(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setResettingPw(false);
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [profilesRes, rolesRes, studentRes, teacherRes, linksRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*"),
+      supabase.from("student_profiles").select("*"),
+      supabase.from("teacher_profiles").select("*"),
+      supabase.from("parent_student_links").select("*"),
+    ]);
+    const roleMap: Record<string, string> = {};
+    (rolesRes.data || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+    const spMap: Record<string, any> = {};
+    (studentRes.data || []).forEach((s: any) => { spMap[s.user_id] = s; });
+    setUsers((profilesRes.data || []).map((p: any) => ({ ...p, role: roleMap[p.user_id] || "unassigned", studentProfile: spMap[p.user_id] || null })));
+    setStudentProfiles(studentRes.data || []);
+    setTeacherProfiles(teacherRes.data || []);
+    setParentLinks(linksRes.data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to PERMANENTLY delete ${userName}? This cannot be undone.`)) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ user_ids: [userId] }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Delete failed");
+      toast({ title: "User Permanently Deleted", description: `${userName} has been removed from the system.` });
+      fetchData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const viewDetails = (user: any) => {
+    const sp = studentProfiles.find((s: any) => s.user_id === user.user_id);
+    const tp = teacherProfiles.find((t: any) => t.user_id === user.user_id);
+    setSelectedUser({ ...user, studentProfile: sp, teacherProfile: tp });
+    if (sp) {
+      setSpForm({
+        national_id: sp.national_id || "", birth_cert_number: sp.birth_cert_number || "",
+        date_of_birth: sp.date_of_birth || "", guardian_name: sp.guardian_name || "",
+        guardian_phone: sp.guardian_phone || "", guardian_email: sp.guardian_email || "",
+        address: sp.address || "", emergency_contact: sp.emergency_contact || "",
+        emergency_phone: sp.emergency_phone || "", blood_type: sp.blood_type || "",
+        allergies: sp.allergies || "", medical_conditions: sp.medical_conditions || "",
+        gender: sp.gender || "",
+      });
+    }
+    setEditingSP(false);
+    setLinkStudentId("");
+    setDetailOpen(true);
+  };
+
+  const handleSaveStudentProfile = async () => {
+    if (!selectedUser?.studentProfile) return;
+    setSaving(true);
+    const { error } = await supabase.from("student_profiles").update(spForm).eq("user_id", selectedUser.user_id);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: "Student Profile Updated" });
+      setEditingSP(false);
+      fetchData();
+    }
+    setSaving(false);
+  };
+
+  const handleTransferStudent = async (userId: string, currentlyActive: boolean) => {
+    const action = currentlyActive ? "transfer (deactivate)" : "reactivate";
+    if (!confirm(`Are you sure you want to ${action} this student?`)) return;
+    const { error } = await supabase.from("student_profiles").update({ is_active: !currentlyActive }).eq("user_id", userId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: currentlyActive ? "Student Transferred" : "Student Reactivated" });
+      fetchData();
+      setDetailOpen(false);
+    }
+  };
+
+  const handleBanUser = async (userId: string, currentlyBanned: boolean) => {
+    const action = currentlyBanned ? "unban" : "ban";
+    const reason = currentlyBanned ? null : prompt("Enter ban reason (optional):");
+    if (!currentlyBanned && reason === null) return; // User cancelled prompt
+    const { error } = await supabase.from("profiles").update({
+      is_banned: !currentlyBanned,
+      banned_reason: currentlyBanned ? null : (reason || "Banned by admin"),
+      banned_at: currentlyBanned ? null : new Date().toISOString(),
+    }).eq("user_id", userId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: currentlyBanned ? "User Unbanned" : "User Banned", description: currentlyBanned ? "Account has been restored." : "User can no longer access the system." });
+      fetchData();
+      setDetailOpen(false);
+    }
+  };
+
+  // Parent-child linking
+  const getLinkedChildren = (parentId: string) => {
+    return parentLinks
+      .filter(l => l.parent_id === parentId)
+      .map(l => {
+        const sp = studentProfiles.find(s => s.user_id === l.student_id);
+        const profile = users.find(u => u.user_id === l.student_id);
+        return { ...l, studentProfile: sp, profile };
+      });
+  };
+
+  const getLinkedParents = (studentId: string) => {
+    return parentLinks
+      .filter(l => l.student_id === studentId)
+      .map(l => {
+        const profile = users.find(u => u.user_id === l.parent_id);
+        return { ...l, profile };
+      });
+  };
+
+  const handleLinkChild = async (parentId: string) => {
+    if (!linkStudentId) return;
+    setLinking(true);
+    const existing = parentLinks.find(l => l.parent_id === parentId && l.student_id === linkStudentId);
+    if (existing) {
+      toast({ title: "Already Linked", description: "This child is already linked to this parent.", variant: "destructive" });
+      setLinking(false);
+      return;
+    }
+    const { error } = await supabase.from("parent_student_links").insert({ parent_id: parentId, student_id: linkStudentId });
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: "Child Linked!", description: "Parent can now view their child's data." });
+      setLinkStudentId("");
+      fetchData();
+    }
+    setLinking(false);
+  };
+
+  const handleUnlinkChild = async (linkId: string) => {
+    if (!confirm("Unlink this child from the parent?")) return;
+    const { error } = await supabase.from("parent_student_links").delete().eq("id", linkId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: "Child Unlinked" }); fetchData(); }
+  };
+
+  const sorted = (list: any[]) => {
+    return [...list].sort((a, b) => {
+      const aVal = (a[sortField] || "").toString().toLowerCase();
+      const bVal = (b[sortField] || "").toString().toLowerCase();
+      return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+  };
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const filterByRole = (role: string) => users.filter(u => u.role === role && u.studentProfile?.graduation_status !== "graduated" && ((u.full_name || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase())));
+  const allFiltered = users.filter(u => u.studentProfile?.graduation_status !== "graduated" && ((u.full_name || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase())));
+  const graduatedUsers = users.filter(u => u.studentProfile?.graduation_status === "graduated" && ((u.full_name || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase())));
+
+  const studentUsers = users.filter(u => u.role === "student");
+
+  const roleBadge = (role: string) => {
+    const colors: Record<string, string> = { admin: "bg-primary text-primary-foreground", teacher: "bg-secondary text-secondary-foreground", student: "bg-accent text-accent-foreground", parent: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" };
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[role] || "bg-muted text-muted-foreground"}`}>{role}</span>;
+  };
+
+  const SortHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(field)}>
+      <span className="flex items-center gap-1">{children} <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></span>
+    </TableHead>
+  );
+
+  const toggleSelect = (userId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId); else next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (data: any[]) => {
+    const ids = data.map(u => u.user_id);
+    const allSelected = ids.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(prev => { const next = new Set(prev); ids.forEach(id => next.delete(id)); return next; });
+    } else {
+      setSelectedIds(prev => { const next = new Set(prev); ids.forEach(id => next.add(id)); return next; });
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    const nonAdmins = users.filter(u => selectedIds.has(u.user_id) && u.role !== "admin");
+    if (nonAdmins.length === 0) { toast({ title: "No users to delete", description: "Admin accounts cannot be batch deleted.", variant: "destructive" }); return; }
+    if (!confirm(`PERMANENTLY delete ${nonAdmins.length} user(s)? This cannot be undone.`)) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ user_ids: nonAdmins.map(u => u.user_id) }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Delete failed");
+      toast({ title: `${result.deleted} users permanently deleted` });
+      setSelectedIds(new Set());
+      fetchData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleBatchDeactivate = async () => {
+    const studentIds = users.filter(u => selectedIds.has(u.user_id) && u.role === "student").map(u => u.user_id);
+    if (studentIds.length === 0) { toast({ title: "No students selected", variant: "destructive" }); return; }
+    if (!confirm(`Deactivate ${studentIds.length} student(s)?`)) return;
+    await Promise.all(studentIds.map(id => supabase.from("student_profiles").update({ is_active: false }).eq("user_id", id)));
+    toast({ title: `${studentIds.length} students deactivated` });
+    setSelectedIds(new Set());
+    fetchData();
+  };
+
+  const UserTable = ({ data, showRole = true }: { data: any[]; showRole?: boolean }) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-10">
+            <Checkbox checked={data.length > 0 && data.every(u => selectedIds.has(u.user_id))} onCheckedChange={() => toggleSelectAll(data)} />
+          </TableHead>
+          <TableHead className="w-12"></TableHead>
+          <SortHeader field="full_name">Name</SortHeader>
+          <TableHead>Email</TableHead>
+          <TableHead>Phone</TableHead>
+          {showRole && <TableHead>Role</TableHead>}
+          <SortHeader field="created_at">Joined</SortHeader>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {loading ? (
+          <TableRow><TableCell colSpan={showRole ? 8 : 7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+        ) : sorted(data).length === 0 ? (
+          <TableRow><TableCell colSpan={showRole ? 8 : 7} className="text-center py-8 text-muted-foreground">No users found.</TableCell></TableRow>
+        ) : sorted(data).map(u => (
+          <TableRow key={u.id} className={`${u.is_banned ? "opacity-50 bg-destructive/10" : u.studentProfile?.is_active === false ? "opacity-50 bg-destructive/5" : ""} ${selectedIds.has(u.user_id) ? "bg-primary/5" : ""}`}>
+            <TableCell>
+              <Checkbox checked={selectedIds.has(u.user_id)} onCheckedChange={() => toggleSelect(u.user_id)} />
+            </TableCell>
+            <TableCell>
+              {u.avatar_url ? (
+                <img src={u.avatar_url} alt={u.full_name} className="w-8 h-8 rounded-full object-cover border border-border" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                  {(u.full_name || "U").charAt(0)}
+                </div>
+              )}
+            </TableCell>
+            <TableCell className="font-medium">
+              {u.full_name}
+              {u.is_banned && <span className="ml-2 px-1.5 py-0.5 text-[10px] rounded bg-destructive text-destructive-foreground font-medium">BANNED</span>}
+              {u.studentProfile?.is_active === false && !u.is_banned && <span className="ml-2 px-1.5 py-0.5 text-[10px] rounded bg-destructive/10 text-destructive font-medium">TRANSFERRED</span>}
+            </TableCell>
+            <TableCell className="text-sm">{u.email}</TableCell>
+            <TableCell className="text-sm">{u.phone || "—"}</TableCell>
+            {showRole && <TableCell>{roleBadge(u.role)}</TableCell>}
+            <TableCell className="text-sm text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
+            <TableCell>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => viewDetails(u)}><Eye className="w-4 h-4" /></Button>
+                {u.role !== "admin" && <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(u.user_id, u.full_name)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  const stats = { total: users.length, admins: users.filter(u => u.role === "admin").length, teachers: users.filter(u => u.role === "teacher").length, students: users.filter(u => u.role === "student").length, parents: users.filter(u => u.role === "parent").length };
+
+  const spField = (label: string, key: string, type = "text") => (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      <Input className="h-8 text-sm" type={type} value={editingSP ? spForm[key] : (selectedUser?.studentProfile?.[key] || "—")} disabled={!editingSP}
+        onChange={e => setSpForm({ ...spForm, [key]: e.target.value })} />
+    </div>
+  );
+
+  // Parent linking section in detail dialog
+  const ParentLinkSection = () => {
+    if (!selectedUser) return null;
+    const isParent = selectedUser.role === "parent";
+    const isStudent = selectedUser.role === "student";
+
+    if (isParent) {
+      const linkedChildren = getLinkedChildren(selectedUser.user_id);
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2"><Link2 className="w-4 h-4" /> Linked Children</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {linkedChildren.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No children linked yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {linkedChildren.map(lc => (
+                  <div key={lc.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      {lc.profile?.avatar_url ? (
+                        <img src={lc.profile.avatar_url} className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold">
+                          {(lc.profile?.full_name || "S").charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{lc.profile?.full_name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {lc.studentProfile?.student_id || ""} • Form {lc.studentProfile?.form || "?"}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleUnlinkChild(lc.id)}>
+                      <Unlink className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="pt-2 border-t space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Link a Student</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                <Input 
+                  className="h-9 pl-8 text-sm" 
+                  placeholder="Search by name or student ID..." 
+                  value={linkSearchQuery} 
+                  onChange={e => setLinkSearchQuery(e.target.value)} 
+                />
+              </div>
+              {linkSearchQuery.trim().length > 0 && (
+                <div className="max-h-40 overflow-y-auto border rounded-md bg-popover">
+                  {studentUsers
+                    .filter(s => {
+                      const sp = studentProfiles.find(sp => sp.user_id === s.user_id);
+                      const alreadyLinked = parentLinks.some(l => l.parent_id === selectedUser.user_id && l.student_id === s.user_id);
+                      if (alreadyLinked) return false;
+                      const q = linkSearchQuery.toLowerCase();
+                      return (s.full_name || "").toLowerCase().includes(q) || (sp?.student_id || "").toLowerCase().includes(q);
+                    })
+                    .slice(0, 10)
+                    .map(s => {
+                      const sp = studentProfiles.find(sp => sp.user_id === s.user_id);
+                      return (
+                        <div 
+                          key={s.user_id} 
+                          className={`flex items-center justify-between p-2 hover:bg-accent/50 cursor-pointer text-sm ${linkStudentId === s.user_id ? "bg-accent" : ""}`}
+                          onClick={() => setLinkStudentId(s.user_id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold">
+                              {(s.full_name || "S").charAt(0)}
+                            </div>
+                            <span>{s.full_name}</span>
+                            {sp?.student_id && <span className="text-xs text-muted-foreground">({sp.student_id})</span>}
+                          </div>
+                          <span className="text-xs text-muted-foreground">Form {sp?.form || "?"}</span>
+                        </div>
+                      );
+                    })}
+                  {studentUsers.filter(s => {
+                    const sp = studentProfiles.find(sp => sp.user_id === s.user_id);
+                    const alreadyLinked = parentLinks.some(l => l.parent_id === selectedUser.user_id && l.student_id === s.user_id);
+                    if (alreadyLinked) return false;
+                    const q = linkSearchQuery.toLowerCase();
+                    return (s.full_name || "").toLowerCase().includes(q) || (sp?.student_id || "").toLowerCase().includes(q);
+                  }).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">No matching students found</p>
+                  )}
+                </div>
+              )}
+              {linkStudentId && (
+                <div className="flex items-center justify-between p-2 rounded-lg border bg-accent/10">
+                  <span className="text-sm font-medium">
+                    Selected: {users.find(u => u.user_id === linkStudentId)?.full_name || linkStudentId}
+                  </span>
+                  <Button size="sm" onClick={() => handleLinkChild(selectedUser.user_id)} disabled={linking}>
+                    <UserPlus className="w-4 h-4 mr-1" /> {linking ? "Linking..." : "Link"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isStudent) {
+      const linkedParents = getLinkedParents(selectedUser.user_id);
+      if (linkedParents.length === 0) return null;
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2"><Link2 className="w-4 h-4" /> Linked Parents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {linkedParents.map(lp => (
+                <div key={lp.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-700">
+                      {(lp.profile?.full_name || "P").charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{lp.profile?.full_name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{lp.profile?.email || ""}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => handleUnlinkChild(lp.id)}>
+                    <Unlink className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <DashboardLayout role="admin">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div><h1 className="font-display text-2xl font-bold text-foreground">User Management</h1><p className="text-muted-foreground text-sm">Manage all system users</p></div>
+          <ExportDropdown
+            title="User Directory"
+            filename="users_list"
+            headers={["Name", "Email", "Phone", "Role", "Joined"]}
+            rows={allFiltered.map(u => [u.full_name, u.email, u.phone || "", u.role, new Date(u.created_at).toLocaleDateString()])}
+            disabled={users.length === 0}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { label: "Total Users", value: stats.total, icon: Users, color: "text-primary" },
+            { label: "Administrators", value: stats.admins, icon: Shield, color: "text-destructive" },
+            { label: "Teachers", value: stats.teachers, icon: BookOpen, color: "text-secondary" },
+            { label: "Students", value: stats.students, icon: GraduationCap, color: "text-accent" },
+            { label: "Parents", value: stats.parents, icon: UserPlus, color: "text-amber-600" },
+          ].map(s => (
+            <Card key={s.label}><CardContent className="flex items-center gap-3 p-4">
+              <div className={`p-2 rounded-lg bg-muted ${s.color}`}><s.icon className="w-5 h-5" /></div>
+              <div><p className="text-xl font-bold">{s.value}</p><p className="text-xs text-muted-foreground">{s.label}</p></div>
+            </CardContent></Card>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">{selectedIds.size} selected</span>
+              <Button variant="destructive" size="sm" onClick={handleBatchDelete}>
+                <Trash2 className="w-4 h-4 mr-1" /> Delete
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleBatchDeactivate}>
+                <UserX className="w-4 h-4 mr-1" /> Deactivate
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+            </div>
+          )}
+        </div>
+
+        <Tabs defaultValue="all">
+          <TabsList>
+            <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
+            <TabsTrigger value="teachers">Teachers ({stats.teachers})</TabsTrigger>
+            <TabsTrigger value="students">Students ({stats.students})</TabsTrigger>
+            <TabsTrigger value="parents">Parents ({stats.parents})</TabsTrigger>
+             <TabsTrigger value="admins">Admins ({stats.admins})</TabsTrigger>
+             <TabsTrigger value="graduated">Graduated ({graduatedUsers.length})</TabsTrigger>
+           </TabsList>
+          <TabsContent value="all"><Card><CardContent className="p-0"><UserTable data={allFiltered} /></CardContent></Card></TabsContent>
+          <TabsContent value="teachers"><Card><CardHeader><CardTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5" /> Teachers</CardTitle></CardHeader><CardContent className="p-0"><UserTable data={filterByRole("teacher")} showRole={false} /></CardContent></Card></TabsContent>
+          <TabsContent value="students"><Card><CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="w-5 h-5" /> Students</CardTitle></CardHeader><CardContent className="p-0"><UserTable data={filterByRole("student")} showRole={false} /></CardContent></Card></TabsContent>
+          <TabsContent value="parents"><Card><CardHeader><CardTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5" /> Parents</CardTitle></CardHeader><CardContent className="p-0"><UserTable data={filterByRole("parent")} showRole={false} /></CardContent></Card></TabsContent>
+          <TabsContent value="admins"><Card><CardHeader><CardTitle className="flex items-center gap-2"><Shield className="w-5 h-5" /> Administrators</CardTitle></CardHeader><CardContent className="p-0"><UserTable data={filterByRole("admin")} showRole={false} /></CardContent></Card></TabsContent>
+          <TabsContent value="graduated"><Card><CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="w-5 h-5" /> Graduated Students</CardTitle></CardHeader><CardContent className="p-0"><UserTable data={graduatedUsers} showRole={false} /></CardContent></Card></TabsContent>
+        </Tabs>
+
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>User Details</DialogTitle></DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {selectedUser.avatar_url ? (
+                    <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-16 h-16 rounded-full object-cover border-2 border-border" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold">
+                      {(selectedUser.full_name || "U").charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-bold">{selectedUser.full_name}</p>
+                    {roleBadge(selectedUser.role)}
+                  </div>
+                </div>
+
+                {/* Ban / Unban */}
+                {selectedUser.role !== "admin" && (
+                  <div className={`flex items-center justify-between p-3 rounded-lg border ${selectedUser.is_banned ? "bg-destructive/10 border-destructive/30" : "bg-muted/30"}`}>
+                    <div className="flex items-center gap-2">
+                      {selectedUser.is_banned ? (
+                        <><Ban className="w-5 h-5 text-destructive" /><div><p className="font-medium text-destructive">Account Banned</p><p className="text-xs text-muted-foreground">{selectedUser.banned_reason || "No reason provided"}</p></div></>
+                      ) : (
+                        <><ShieldOff className="w-5 h-5 text-muted-foreground" /><p className="text-sm text-muted-foreground">Account is active and not banned</p></>
+                      )}
+                    </div>
+                    <Button
+                      variant={selectedUser.is_banned ? "outline" : "destructive"}
+                      size="sm"
+                      onClick={() => handleBanUser(selectedUser.user_id, selectedUser.is_banned)}
+                    >
+                      {selectedUser.is_banned ? <><UserCheck className="w-4 h-4 mr-1" /> Unban</> : <><Ban className="w-4 h-4 mr-1" /> Ban Account</>}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Reset Password */}
+                <Card>
+                  <CardContent className="p-3">
+                    {resetPwOpen ? (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="w-4 h-4" /> Reset Password for {selectedUser.full_name}</p>
+                        <Input
+                          type="password"
+                          placeholder="Enter new password (min 6 chars)"
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleResetPassword(selectedUser.user_id)} disabled={resettingPw}>
+                            {resettingPw ? "Resetting..." : "Confirm Reset"}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { setResetPwOpen(false); setNewPassword(""); }}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => setResetPwOpen(true)}>
+                        <KeyRound className="w-4 h-4 mr-2" /> Reset User Password
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /> {selectedUser.email || "—"}</div>
+                  <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /> {selectedUser.phone || "—"}</div>
+                  <div><span className="text-muted-foreground">Joined:</span> {new Date(selectedUser.created_at).toLocaleDateString()}</div>
+                  {selectedUser.gender && <div><span className="text-muted-foreground">Sex:</span> {selectedUser.gender === "male" ? "Male" : "Female"}</div>}
+                </div>
+
+                {/* Parent-Child Linking Section */}
+                <ParentLinkSection />
+
+                {selectedUser.studentProfile && (
+                  <>
+                    <div className={`flex items-center justify-between p-3 rounded-lg border ${selectedUser.studentProfile.is_active === false ? "bg-destructive/5 border-destructive/20" : "bg-green-500/5 border-green-500/20"}`}>
+                      <div className="flex items-center gap-2">
+                        {selectedUser.studentProfile.is_active === false ? (
+                          <><UserX className="w-5 h-5 text-destructive" /><div><p className="font-medium text-destructive">Transferred / Deactivated</p><p className="text-xs text-muted-foreground">This student is no longer active</p></div></>
+                        ) : (
+                          <><UserCheck className="w-5 h-5 text-green-600" /><div><p className="font-medium text-green-700">Active Student</p><p className="text-xs text-muted-foreground">Student ID: <span className="font-mono font-semibold">{selectedUser.studentProfile.student_id || "—"}</span></p></div></>
+                        )}
+                      </div>
+                      <Button
+                        variant={selectedUser.studentProfile.is_active === false ? "outline" : "destructive"}
+                        size="sm"
+                        onClick={() => handleTransferStudent(selectedUser.user_id, selectedUser.studentProfile.is_active !== false)}
+                      >
+                        {selectedUser.studentProfile.is_active === false ? <><UserCheck className="w-4 h-4 mr-1" /> Reactivate</> : <><UserX className="w-4 h-4 mr-1" /> Transfer</>}
+                      </Button>
+                    </div>
+
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2"><Shield className="w-4 h-4" /> Identity & Guardian</CardTitle>
+                          <Button variant="ghost" size="sm" onClick={() => setEditingSP(!editingSP)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                         <div className="grid grid-cols-2 gap-3">
+                          {spField("Student ID", "student_id")}
+                          {spField("Form", "form")}
+                          {spField("National ID", "national_id")}
+                          {spField("Birth Cert No.", "birth_cert_number")}
+                          {spField("Date of Birth", "date_of_birth", editingSP ? "date" : "text")}
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground">Sex</label>
+                            <select className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm h-8" disabled={!editingSP}
+                              value={editingSP ? spForm.gender : (selectedUser?.studentProfile?.gender || "")}
+                              onChange={e => setSpForm({ ...spForm, gender: e.target.value })}>
+                              <option value="">—</option>
+                              <option value="male">Male</option>
+                              <option value="female">Female</option>
+                            </select>
+                          </div>
+                          {spField("Guardian Name", "guardian_name")}
+                          {spField("Guardian Phone", "guardian_phone")}
+                          {spField("Guardian Email", "guardian_email")}
+                          {spField("Address", "address")}
+                          {spField("Emergency Contact", "emergency_contact")}
+                          {spField("Emergency Phone", "emergency_phone")}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader><CardTitle className="text-sm flex items-center gap-2">❤️ Medical Information</CardTitle></CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-3">
+                          {spField("Blood Type", "blood_type")}
+                          {spField("Allergies", "allergies")}
+                          <div className="col-span-2">{spField("Medical Conditions", "medical_conditions")}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {editingSP && (
+                      <Button className="w-full" onClick={handleSaveStudentProfile} disabled={saving}>
+                        <Save className="w-4 h-4 mr-2" /> {saving ? "Saving..." : "Save Student Records"}
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {selectedUser.teacherProfile && (
+                  <Card>
+                    <CardHeader><CardTitle className="text-sm">Teacher Profile</CardTitle></CardHeader>
+                    <CardContent className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Employee ID:</span> {selectedUser.teacherProfile.employee_id || "—"}</p>
+                      <p><span className="text-muted-foreground">Department:</span> {selectedUser.teacherProfile.department || "—"}</p>
+                      <p><span className="text-muted-foreground">Qualification:</span> {selectedUser.teacherProfile.qualification || "—"}</p>
+                      <p><span className="text-muted-foreground">Subjects:</span> {(selectedUser.teacherProfile.subjects_taught || []).join(", ") || "—"}</p>
+                      <p><span className="text-muted-foreground">Date Joined:</span> {selectedUser.teacherProfile.date_joined || "—"}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default AdminUsers;
