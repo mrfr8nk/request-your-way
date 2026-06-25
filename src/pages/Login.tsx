@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,14 +64,22 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
-    if (error) {
-      toast({ title: "Google Sign-In Failed", description: error.message || "Could not sign in with Google.", variant: "destructive" });
+    if (result.error) {
+      toast({ title: "Google Sign-In Failed", description: (result.error as any).message || "Could not sign in with Google.", variant: "destructive" });
       setGoogleLoading(false);
+      return;
     }
+    if (result.redirected) return; // browser is navigating to Google
+    // session already set — route by role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).limit(1).single();
+      navigate(`/${roleData?.role || "student"}`, { replace: true });
+    }
+    setGoogleLoading(false);
   };
 
   const resolveEmail = async (input: string): Promise<string | null> => {
