@@ -109,14 +109,6 @@ const Staff = () => {
                     <p className="font-body text-muted-foreground text-sm mb-4">{member.subject}</p>
 
                     <div className="flex justify-center gap-2">
-                      {member.email && (
-                        <a
-                          href={`mailto:${member.email}`}
-                          className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </a>
-                      )}
                       {member.bio && (
                         <button
                           onClick={() => setSelectedStaff(member)}
