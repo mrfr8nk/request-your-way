@@ -71,7 +71,7 @@ const AdminStaffGallery = () => {
       department: form.department.trim() || null,
       subject: form.subject.trim() || null,
       category: form.category,
-      email: form.email.trim() || null,
+      
       bio: form.bio.trim() || null,
       education: form.education.trim() || null,
       experience: form.experience.trim() || null,
@@ -102,7 +102,7 @@ const AdminStaffGallery = () => {
   };
 
   const resetForm = () => {
-    setForm({ name: "", position: "", department: "", subject: "", category: "teachers", email: "", bio: "", education: "", experience: "", image_url: "" });
+    setForm({ name: "", position: "", department: "", subject: "", category: "teachers", bio: "", education: "", experience: "", image_url: "" });
     setEditItem(null);
     setFormOpen(false);
   };
@@ -115,7 +115,7 @@ const AdminStaffGallery = () => {
       department: item.department || "",
       subject: item.subject || "",
       category: item.category || "teachers",
-      email: item.email || "",
+      
       bio: item.bio || "",
       education: item.education || "",
       experience: item.experience || "",
