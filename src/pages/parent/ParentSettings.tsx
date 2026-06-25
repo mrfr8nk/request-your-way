@@ -117,120 +117,88 @@ const ParentSettings = () => {
     if (!user || !childStudentId.trim()) return;
     setLinking(true);
 
-    const { data: studentProfile } = await supabase
-      .from("student_profiles")
-      .select("user_id, guardian_phone, guardian_email")
-      .eq("student_id", childStudentId.trim())
-      .single();
-
-    if (!studentProfile) {
-      toast({ title: "Not Found", description: "No student found with that ID.", variant: "destructive" });
-      setLinking(false);
-      return;
-    }
-
-    // Check if already linked
-    const existing = children.find(c => c.studentId === studentProfile.user_id);
-    if (existing) {
-      toast({ title: "Already Linked", description: "This child is already linked to your account.", variant: "destructive" });
-      setLinking(false);
-      return;
-    }
-
-    // Verify guardian info - normalize both numbers for comparison
-    const parentPhone = phone.trim().replace(/[\s\-\(\)]/g, "");
-    const parentEmail = user.email?.trim().toLowerCase() || "";
-    const studentGuardianPhone = (studentProfile.guardian_phone || "").trim().replace(/[\s\-\(\)]/g, "");
-    const studentGuardianEmail = (studentProfile.guardian_email || "").trim().toLowerCase();
-
-    // Compare last 9 digits for phone match (handles different country code formats)
-    const parentLast9 = parentPhone.replace(/\D/g, "").slice(-9);
-    const guardianLast9 = studentGuardianPhone.replace(/\D/g, "").slice(-9);
-    const phoneMatch = parentLast9.length >= 9 && guardianLast9.length >= 9 && parentLast9 === guardianLast9;
-    const emailMatch = parentEmail && studentGuardianEmail && parentEmail === studentGuardianEmail;
-
-    if (!phoneMatch && !emailMatch) {
-      toast({
-        title: "Verification Failed",
-        description: "Your phone or email doesn't match the guardian info on the student's profile. Please contact the school admin to link manually.",
-        variant: "destructive",
-      });
-      setLinking(false);
-      return;
-    }
-
-    const { error } = await supabase.from("parent_student_links").insert({
-      parent_id: user.id,
-      student_id: studentProfile.user_id,
+    const parentPhone = phone.trim();
+    const { data: result, error: rpcError } = await supabase.rpc("link_student_to_parent" as any, {
+      _student_id: childStudentId.trim(),
+      _parent_phone: parentPhone,
     });
+    const r = result as any;
 
-    setLinking(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      const parentName = fullName || profile?.full_name || "A parent";
-      // Send in-app notification to the student
-      await sendLinkNotification(studentProfile.user_id, parentName);
-
-      // Get student profile info for emails
-      const { data: studentProf } = await supabase.from("profiles").select("full_name, email").eq("user_id", studentProfile.user_id).single();
-      const { data: studentDetail } = await supabase.from("student_profiles").select("classes(name)").eq("user_id", studentProfile.user_id).single();
-      const studentName = studentProf?.full_name || "Student";
-      const studentEmail = studentProf?.email;
-      const className = (studentDetail as any)?.classes?.name;
-      const linkDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-
-      const linkData = { parentName, studentName, className, date: linkDate };
-
-      // Send branded emails to both student and parent
-      let emailsSent = 0;
-      let emailsFailed = 0;
-
-      if (studentEmail) {
-        try {
-          const { error: emailErr } = await supabase.functions.invoke("send-branded-email", {
-            body: { email: studentEmail, type: "parent_link", link_data: { ...linkData, role: "student" } },
-          });
-          if (emailErr) { emailsFailed++; console.error("Student email failed:", emailErr); }
-          else emailsSent++;
-        } catch { emailsFailed++; }
-      }
-
-      if (user?.email) {
-        try {
-          const { error: emailErr } = await supabase.functions.invoke("send-branded-email", {
-            body: { email: user.email, type: "parent_link", link_data: { ...linkData, role: "parent" } },
-          });
-          if (emailErr) { emailsFailed++; console.error("Parent email failed:", emailErr); }
-          else emailsSent++;
-        } catch { emailsFailed++; }
-      }
-
-      toast({
-        title: "Child Linked!",
-        description: emailsFailed > 0
-          ? `Link successful! ${emailsSent} email(s) sent, ${emailsFailed} failed (may be blocked by spam filters).`
-          : "Both you and the student have been notified via email.",
-      });
-      setChildStudentId("");
-      setChildLookup(null);
-      setLinkDialogOpen(false);
-      fetchChildren();
+    if (rpcError || !r?.ok) {
+      const errKey = r?.error || "";
+      const messages: Record<string, string> = {
+        not_found: "No student found with that ID.",
+        verification_failed: "Your phone or email doesn't match the guardian info on the student's profile. Please contact the school admin to link manually.",
+        not_authenticated: "Please log in and try again.",
+      };
+      toast({ title: errKey === "not_found" ? "Not Found" : "Verification Failed", description: messages[errKey] || rpcError?.message || "Could not link child.", variant: "destructive" });
+      setLinking(false);
+      return;
     }
+
+    const studentUserId = r.student_user_id as string;
+    const existing = children.find(c => c.studentId === studentUserId);
+    if (existing) {
+      toast({ title: "Already Linked", description: "This child is already linked to your account." });
+      setLinking(false);
+      setLinkDialogOpen(false);
+      return;
+    }
+
+    const parentName = fullName || profile?.full_name || "A parent";
+    await sendLinkNotification(studentUserId, parentName);
+
+    // Get student profile info for emails
+    const { data: studentProf } = await supabase.from("profiles").select("full_name, email").eq("user_id", studentUserId).single();
+    const { data: studentDetail } = await supabase.from("student_profiles").select("classes(name)").eq("user_id", studentUserId).single();
+    const studentName = studentProf?.full_name || "Student";
+    const studentEmail = studentProf?.email;
+    const className = (studentDetail as any)?.classes?.name;
+    const linkDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const linkData = { parentName, studentName, className, date: linkDate };
+
+    let emailsSent = 0;
+    let emailsFailed = 0;
+
+    if (studentEmail) {
+      try {
+        const { error: emailErr } = await supabase.functions.invoke("send-branded-email", {
+          body: { email: studentEmail, type: "parent_link", link_data: { ...linkData, role: "student" } },
+        });
+        if (emailErr) { emailsFailed++; } else emailsSent++;
+      } catch { emailsFailed++; }
+    }
+
+    if (user?.email) {
+      try {
+        const { error: emailErr } = await supabase.functions.invoke("send-branded-email", {
+          body: { email: user.email, type: "parent_link", link_data: { ...linkData, role: "parent" } },
+        });
+        if (emailErr) { emailsFailed++; } else emailsSent++;
+      } catch { emailsFailed++; }
+    }
+
+    toast({
+      title: "Child Linked!",
+      description: emailsFailed > 0
+        ? `Link successful! ${emailsSent} email(s) sent, ${emailsFailed} failed (may be blocked by spam filters).`
+        : "Both you and the student have been notified via email.",
+    });
+    setLinking(false);
+    setChildStudentId("");
+    setChildLookup(null);
+    setLinkDialogOpen(false);
+    fetchChildren();
   };
 
   const lookupStudent = async (val: string) => {
     setChildStudentId(val);
     setChildLookup(null);
     if (val.trim().length >= 3) {
-      const { data } = await supabase
-        .from("student_profiles")
-        .select("user_id, student_id, form, level")
-        .eq("student_id", val.trim())
-        .single();
-      if (data) {
-        const { data: p } = await supabase.from("profiles").select("full_name").eq("user_id", data.user_id).single();
-        setChildLookup(p?.full_name ? `✓ Found: ${p.full_name} (Form ${data.form})` : `✓ Student found (Form ${data.form})`);
+      const { data } = await supabase.rpc("lookup_student_for_linking" as any, { _student_id: val.trim() });
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        setChildLookup(row.full_name ? `✓ Found: ${row.full_name} (Form ${row.form})` : `✓ Student found (Form ${row.form})`);
       } else {
         setChildLookup("✗ No student found with this ID");
       }
