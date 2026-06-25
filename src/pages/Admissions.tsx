@@ -81,8 +81,7 @@ const Admissions = () => {
       setUploading(false);
       return;
     }
-    const { data: urlData } = supabase.storage.from("application-documents").getPublicUrl(path);
-    setUrl(urlData.publicUrl);
+    setUrl(path);
     setUploading(false);
   };
 
