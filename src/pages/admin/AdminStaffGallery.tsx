@@ -27,7 +27,7 @@ const AdminStaffGallery = () => {
 
   const [form, setForm] = useState({
     name: "", position: "", department: "", subject: "",
-    category: "teachers", email: "", bio: "", education: "",
+    category: "teachers", bio: "", education: "",
     experience: "", image_url: "",
   });
 
