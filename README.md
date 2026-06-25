@@ -818,3 +818,87 @@ Then re-run the schema.
 Built with dedication by **Darrell Mucheri** for **St. Mary's High School** · Zimbabwe · 2025
 
 </div>
+
+---
+
+## Deploy to Render (Static Site)
+
+The frontend is a Vite SPA, so it deploys cleanly as a Render **Static Site**. The Supabase backend (database, auth, edge functions, storage) stays on Lovable Cloud / Supabase — Render only hosts the built frontend.
+
+### 1. Push the repo to GitHub / GitLab / Bitbucket
+
+Render deploys from a Git provider. Make sure your latest code is pushed.
+
+### 2. Create the Static Site on Render
+
+1. Go to [https://dashboard.render.com](https://dashboard.render.com) → **New +** → **Static Site**.
+2. Connect your Git provider and pick this repository.
+3. Fill in the settings:
+
+| Field | Value |
+|---|---|
+| **Name** | `st-marys-school` (or anything you like) |
+| **Branch** | `main` |
+| **Root Directory** | *(leave blank)* |
+| **Build Command** | `npm install && npm run build` |
+| **Publish Directory** | `dist` |
+| **Node Version** | `20` (set via env var `NODE_VERSION=20`) |
+
+> There is no "start command" on a static site — Render serves the files in `dist/` over its CDN.
+
+### 3. Add environment variables
+
+In the Render dashboard for the site → **Environment** → **Add Environment Variable**:
+
+| Key | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | your Supabase anon / publishable key |
+| `VITE_SUPABASE_PROJECT_ID` | your Supabase project ref |
+| `NODE_VERSION` | `20` |
+
+These must be set **before** the first build — Vite inlines `VITE_*` vars at build time.
+
+### 4. Add the SPA rewrite rule (fixes 404 on refresh)
+
+React Router uses client-side routing, so deep links like `/admin` must fall back to `index.html`.
+
+In the Render dashboard → your site → **Redirects/Rewrites** → **Add Rule**:
+
+| Source | Destination | Action |
+|---|---|---|
+| `/*` | `/index.html` | Rewrite |
+
+### 5. Deploy
+
+Click **Create Static Site**. Render will:
+
+1. Run `npm install && npm run build`
+2. Publish the contents of `dist/`
+3. Give you a URL like `https://st-marys-school.onrender.com`
+
+Every push to `main` triggers an automatic redeploy.
+
+### Quick reference — scripts used
+
+From `package.json`:
+
+```bash
+# Install
+npm install
+
+# Build for production (Render runs this)
+npm run build
+
+# Preview the production build locally
+npm run preview
+
+# Local dev (not used by Render)
+npm run dev
+```
+
+### Custom domain (optional)
+
+Render → site → **Settings** → **Custom Domains** → add your domain and update DNS as instructed (CNAME to the Render URL).
+
+</div>
