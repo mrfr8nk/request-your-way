@@ -63,11 +63,6 @@ const GallerySection = () => {
                   <p className="font-body text-accent-foreground font-semibold text-sm mb-1">{member.position}</p>
                   <p className="font-body text-muted-foreground text-sm mb-3">{member.subject || member.department}</p>
                   <div className="flex justify-center gap-2">
-                    {member.email && (
-                      <a href={`mailto:${member.email}`} className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all">
-                        <Mail className="w-4 h-4" />
-                      </a>
-                    )}
                     {member.bio && (
                       <button onClick={() => setSelectedStaff(member)} className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all">
                         <User className="w-4 h-4" />
@@ -120,11 +115,6 @@ const GallerySection = () => {
                 )}
               </div>
               <div className="flex gap-3">
-                {selectedStaff.email && (
-                  <a href={`mailto:${selectedStaff.email}`} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-body font-semibold text-sm hover:opacity-90 transition-opacity">
-                    <Mail className="w-4 h-4" /> Email
-                  </a>
-                )}
                 <button onClick={() => setSelectedStaff(null)} className="flex items-center gap-2 bg-muted text-foreground px-4 py-2 rounded-lg font-body font-semibold text-sm hover:bg-border transition-colors">Close</button>
               </div>
             </div>

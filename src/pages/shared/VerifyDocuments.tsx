@@ -33,8 +33,9 @@ const VerifyDocuments = ({ role }: Props) => {
     setReportNotFound(false);
     setReportResult(null);
 
-    const { data } = await supabase.from("report_verifications").select("*").eq("serial_number", s).single();
-    if (data) setReportResult(data);
+    const { data } = await supabase.rpc("verify_report_by_serial" as any, { _serial: s });
+    const row = Array.isArray(data) ? data[0] : null;
+    if (row) setReportResult(row);
     else setReportNotFound(true);
     setReportLoading(false);
   };

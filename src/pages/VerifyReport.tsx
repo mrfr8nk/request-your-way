@@ -31,14 +31,11 @@ const VerifyReport = () => {
     setNotFound(false);
     setResult(null);
 
-    const { data } = await supabase
-      .from("report_verifications")
-      .select("*")
-      .eq("serial_number", s)
-      .single();
+    const { data } = await supabase.rpc("verify_report_by_serial" as any, { _serial: s });
+    const row = Array.isArray(data) ? data[0] : null;
 
-    if (data) {
-      setResult(data);
+    if (row) {
+      setResult(row);
     } else {
       setNotFound(true);
     }

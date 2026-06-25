@@ -217,32 +217,6 @@ const Signup = () => {
     if (!selectedRole) return;
     setLoading(true);
 
-    const { data: codeData, error: codeError } = await supabase
-      .from("access_codes").select("*").eq("code", accessCode.trim()).is("deleted_at", null).single();
-
-    if (codeError || !codeData) {
-      toast({ title: "Invalid Access Code", description: "The code is invalid, expired, or already used.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-    const useCount = (codeData as any).use_count ?? (codeData.used ? 1 : 0);
-    const maxUses = (codeData as any).max_uses ?? 1;
-    if (useCount >= maxUses) {
-      toast({ title: "Code Fully Used", description: "This access code has reached its usage limit.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-    if (codeData.role !== selectedRole) {
-      toast({ title: "Wrong Code Type", description: `This code is for ${codeData.role}s, not ${selectedRole}s.`, variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-    if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
-      toast({ title: "Code Expired", description: "This access code has expired.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email, password,
       options: { data: { full_name: fullName } },
@@ -254,21 +228,37 @@ const Signup = () => {
       return;
     }
 
-    await supabase.from("user_roles").insert({ user_id: authData.user.id, role: codeData.role });
-    const newUseCount = useCount + 1;
-    await supabase.from("access_codes").update({
-      used: newUseCount >= maxUses,
-      used_by: authData.user.id,
-      use_count: newUseCount,
-    } as any).eq("id", codeData.id);
+    if (!authData.session) {
+      await supabase.auth.signInWithPassword({ email, password });
+    }
 
-    if (codeData.role === "teacher") {
+    const { data: result, error: rpcError } = await supabase.rpc("consume_access_code" as any, {
+      _code: accessCode.trim(),
+      _role: selectedRole,
+    });
+
+    const r = result as any;
+    if (rpcError || !r?.ok) {
+      const errKey = r?.error || "";
+      const messages: Record<string, string> = {
+        invalid: "The code is invalid.",
+        used_up: "This access code has reached its usage limit.",
+        wrong_role: `This code is not for ${selectedRole}s.`,
+        expired: "This access code has expired.",
+        not_authenticated: "Please log in and try again.",
+      };
+      toast({ title: "Invalid Access Code", description: messages[errKey] || rpcError?.message || "Could not validate code.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    if (selectedRole === "teacher") {
       await supabase.from("teacher_profiles").insert({ user_id: authData.user.id });
     }
 
     // Send welcome email
     supabase.functions.invoke("send-branded-email", {
-      body: { email, type: "welcome", welcome_data: { name: fullName, role: codeData.role } },
+      body: { email, type: "welcome", welcome_data: { name: fullName, role: selectedRole } },
     }).catch(() => {});
 
     toast({ title: "Account Created!", description: "Welcome to St. Mary's. You can now log in." });

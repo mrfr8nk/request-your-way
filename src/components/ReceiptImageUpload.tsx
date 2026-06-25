@@ -34,8 +34,8 @@ const ReceiptImageUpload = ({ value, onChange, folder = "petty-cash" }: ReceiptI
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(path);
-    onChange(urlData.publicUrl);
+    const { data: signed } = await supabase.storage.from("receipts").createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    onChange(signed?.signedUrl || path);
     setUploading(false);
   };
 

@@ -109,14 +109,6 @@ const Staff = () => {
                     <p className="font-body text-muted-foreground text-sm mb-4">{member.subject}</p>
 
                     <div className="flex justify-center gap-2">
-                      {member.email && (
-                        <a
-                          href={`mailto:${member.email}`}
-                          className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </a>
-                      )}
                       {member.bio && (
                         <button
                           onClick={() => setSelectedStaff(member)}
@@ -192,14 +184,6 @@ const Staff = () => {
               </div>
 
               <div className="flex gap-3">
-                {selectedStaff.email && (
-                  <a
-                    href={`mailto:${selectedStaff.email}`}
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-body font-semibold text-sm hover:opacity-90 transition-opacity"
-                  >
-                    <Mail className="w-4 h-4" /> Email
-                  </a>
-                )}
                 <button
                   onClick={() => setSelectedStaff(null)}
                   className="flex items-center gap-2 bg-muted text-foreground px-4 py-2 rounded-lg font-body font-semibold text-sm hover:bg-border transition-colors"

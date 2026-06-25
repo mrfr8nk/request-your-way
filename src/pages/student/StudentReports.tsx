@@ -586,8 +586,8 @@ const StudentReports = () => {
         .upload(path, blob, { contentType: "application/pdf", upsert: true });
       if (upErr) throw upErr;
 
-      const { data: pub } = supabase.storage.from("student-reports").getPublicUrl(path);
-      const pdfUrl = pub.publicUrl;
+      const { data: signed } = await supabase.storage.from("student-reports").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const pdfUrl = signed?.signedUrl || "";
 
       const verifyUrl = `${window.location.origin}/verify-report?serial=${encodeURIComponent(result.serialNo)}`;
       const message =
