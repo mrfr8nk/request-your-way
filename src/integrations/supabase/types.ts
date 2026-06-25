@@ -1379,7 +1379,6 @@ export type Database = {
           department: string | null
           display_order: number
           education: string | null
-          email: string | null
           experience: string | null
           id: string
           image_url: string | null
@@ -1397,7 +1396,6 @@ export type Database = {
           department?: string | null
           display_order?: number
           education?: string | null
-          email?: string | null
           experience?: string | null
           id?: string
           image_url?: string | null
@@ -1415,7 +1413,6 @@ export type Database = {
           department?: string | null
           display_order?: number
           education?: string | null
-          email?: string | null
           experience?: string | null
           id?: string
           image_url?: string | null
@@ -1771,6 +1768,10 @@ export type Database = {
         }
         Returns: string
       }
+      consume_access_code: {
+        Args: { _code: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: Json
+      }
       create_direct_conversation: {
         Args: { _recipient_id: string; _title?: string }
         Returns: string
@@ -1785,6 +1786,36 @@ export type Database = {
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
+      }
+      link_student_to_parent: {
+        Args: { _parent_phone: string; _student_id: string }
+        Returns: Json
+      }
+      lookup_student_for_linking: {
+        Args: { _student_id: string }
+        Returns: {
+          form: number
+          full_name: string
+          level: Database["public"]["Enums"]["academic_level"]
+          user_id: string
+        }[]
+      }
+      verify_report_by_serial: {
+        Args: { _serial: string }
+        Returns: {
+          academic_year: number
+          average_mark: number
+          class_name: string
+          generated_at: string
+          level: string
+          position: number
+          serial_number: string
+          student_code: string
+          student_name: string
+          subjects_count: number
+          term: string
+          total_students: number
+        }[]
       }
     }
     Enums: {
