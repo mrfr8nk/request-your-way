@@ -136,8 +136,8 @@ const AdminStaffGallery = () => {
             <ExportDropdown
               title="Staff Directory"
               filename="staff_directory"
-              headers={["Name", "Position", "Department", "Subject", "Category", "Email", "Education", "Experience"]}
-              rows={staff.map(s => [s.name, s.position, s.department || "", s.subject || "", s.category, s.email || "", s.education || "", s.experience || ""])}
+              headers={["Name", "Position", "Department", "Subject", "Category", "Education", "Experience"]}
+              rows={staff.map(s => [s.name, s.position, s.department || "", s.subject || "", s.category, s.education || "", s.experience || ""])}
               disabled={staff.length === 0}
             />
             <Button onClick={() => { resetForm(); setFormOpen(true); }}>
@@ -212,7 +212,7 @@ const AdminStaffGallery = () => {
                 >
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
-                <Input placeholder="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                
               </div>
               <textarea
                 className="w-full border border-input rounded-lg px-3 py-2 bg-background text-foreground text-sm min-h-[80px] resize-y"
