@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserPlus, GraduationCap, BookOpen, Shield, Send, Loader2, CheckCircle, Users, Mail, KeyRound, MessageCircle, ClipboardPaste } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import PhoneInput from "@/components/PhoneInput";
+import AuthShell from "@/components/AuthShell";
 
 type SignupRole = "student" | "teacher" | "parent" | "admin";
 
@@ -460,11 +461,12 @@ const Signup = () => {
   );
   if (otpStep === "otp") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-8">
-        <div className="w-full max-w-md">
+      <AuthShell quote="Join a community of scholars, mentors, and friends — for life." attribution="— Verify your account">
+        <div className="w-full">
           <div className="text-center mb-8">
-            <img src={schoolLogo} alt="St. Mary's" className="h-20 w-20 object-contain mx-auto mb-4" />
-            <h1 className="font-display text-2xl font-bold text-primary">Verify Your {otpMethod === "whatsapp" ? "WhatsApp" : "Email"}</h1>
+            <img src={schoolLogo} alt="St. Mary's" className="h-14 w-14 object-contain mx-auto mb-4 lg:hidden" />
+            <span className="eyebrow eyebrow-center">Verify Your {otpMethod === "whatsapp" ? "WhatsApp" : "Email"}</span>
+            <h1 className="headline-editorial text-3xl md:text-4xl text-foreground mt-4">Enter your <em className="italic-accent">code</em>.</h1>
           </div>
           <Card className="shadow-card border-2">
             <CardContent className="pt-6 space-y-6">
@@ -564,36 +566,36 @@ const Signup = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Success screen
   if (otpStep === "done") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-        <Card className="max-w-md w-full text-center py-8">
-          <CardContent>
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="font-display text-2xl font-bold text-foreground mb-2">Account Created!</h2>
-            <p className="text-muted-foreground mb-4">Your email has been verified and your account is ready.</p>
-            <p className="text-sm text-muted-foreground mb-6">Redirecting you to login...</p>
-            <Link to="/login" className="text-sm text-primary hover:underline">Go to Login now</Link>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthShell quote="Welcome home." attribution="— Account ready">
+        <div className="text-center">
+          <CheckCircle className="w-14 h-14 text-[hsl(var(--secondary))] mx-auto mb-6" />
+          <span className="eyebrow eyebrow-center">Success</span>
+          <h2 className="headline-editorial text-4xl text-foreground mt-4 mb-3">Account <em className="italic-accent">created</em>.</h2>
+          <p className="lead text-sm mb-2">Your account is verified and ready.</p>
+          <p className="font-body text-sm text-muted-foreground mb-6">Redirecting you to login…</p>
+          <Link to="/login" className="link-editorial font-body text-[12px] tracking-[0.18em] uppercase font-semibold text-foreground">Go to Login now</Link>
+        </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-8">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block mb-4">
-            <img src={schoolLogo} alt="St. Mary's" className="h-20 w-20 object-contain mx-auto" />
-          </Link>
-          <h1 className="font-display text-3xl font-bold text-primary">Create Account</h1>
-          <p className="text-muted-foreground mt-2">Select your role to get started</p>
+    <AuthShell quote="An education that shapes the whole person — mind, body, and spirit." attribution="— Begin your story">
+      <div className="w-full">
+        <div className="mb-8">
+          <img src={schoolLogo} alt="St. Mary's" className="h-14 w-14 object-contain mb-4 lg:hidden" />
+          <span className="eyebrow">Create Account</span>
+          <h1 className="headline-editorial text-4xl md:text-5xl text-foreground mt-4">
+            Join <em className="italic-accent">us</em>.
+          </h1>
+          <p className="lead mt-3 text-sm">Select your role to get started.</p>
         </div>
 
         {!selectedRole ? (
@@ -792,7 +794,7 @@ const Signup = () => {
           </div>
         )}
       </div>
-    </div>
+    </AuthShell>
   );
 };
 
