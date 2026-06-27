@@ -1,52 +1,65 @@
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import aboutImg from "@/assets/about-school.jpg";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { Reveal } from "@/components/motion/Reveal";
+import { Eyebrow, EditorialHeading } from "@/components/motion/Editorial";
 
 const AboutSection = () => {
-  const { ref, isVisible } = useScrollReveal();
-
   return (
-    <section id="about" className="relative py-24">
-      <div className="container mx-auto px-4" ref={ref}>
-        <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-          <span className="glass-pill inline-block px-4 py-1.5 rounded-full text-xs uppercase tracking-[3px] font-semibold text-primary mb-4">About</span>
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground mb-4">Our Story</h2>
-          <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div
-            className={`glass-card glass-shine overflow-hidden p-2 transition-all duration-700 delay-200 ${
-              isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-12"
-            }`}
-          >
-            <img
-              src={aboutImg}
-              alt="St. Mary's students"
-              className="w-full h-80 object-cover rounded-xl"
-            />
+    <section id="about" className="relative py-24 md:py-32 bg-editorial">
+      <div className="container mx-auto px-6 md:px-10">
+        <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+          {/* Image column — tilted, layered */}
+          <div className="lg:col-span-7 relative">
+            <Reveal y={32} duration={0.8}>
+              <div className="relative">
+                <div className="absolute -top-6 -left-6 w-32 h-32 border border-[hsl(var(--secondary)/0.5)] hidden md:block" aria-hidden />
+                <div className="absolute -bottom-6 -right-6 w-40 h-40 bg-[hsl(var(--secondary)/0.12)] hidden md:block" aria-hidden />
+                <div className="relative overflow-hidden editorial-frame">
+                  <img
+                    src={aboutImg}
+                    alt="St. Mary's students"
+                    className="w-full h-[420px] md:h-[560px] object-cover transition-transform duration-[1200ms] ease-editorial hover:scale-[1.04]"
+                  />
+                </div>
+                <div className="hidden md:flex absolute -bottom-8 -right-2 bg-[hsl(var(--primary))] text-white px-8 py-6 shadow-tilt items-baseline gap-3">
+                  <span className="headline-editorial text-5xl">63</span>
+                  <span className="font-accent italic text-lg text-[hsl(43_78%_70%)]">years of legacy</span>
+                </div>
+              </div>
+            </Reveal>
           </div>
 
-          <div
-            className={`glass-card p-8 md:p-10 transition-all duration-700 delay-300 ${
-              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"
-            }`}
-          >
-            <h3 className="font-display text-2xl md:text-3xl font-bold text-primary mb-4">
-              63 Years of <span className="text-sheen">Excellence</span> & Ubuntu
-            </h3>
-            <p className="font-body text-muted-foreground mb-4 leading-relaxed">
-              Founded in 1962 by the Anglican Diocese of Harare (C.P.C.A), St. Mary's High School has been a beacon of academic excellence for 63 years. From humble beginnings with 70 male boarding students and 3 teachers, we have grown into a thriving institution serving 1,261 students with a dedicated staff of 55 teachers.
-            </p>
-            <p className="font-body text-muted-foreground mb-6 leading-relaxed">
-              Our school was founded on solid Christian principles, striving to produce highly intellectual, God-fearing, and morally upright students guided by the virtues of Unhu/Ubuntu.
-            </p>
-            <Link
-              to="/about"
-              className="glass-shine inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg font-body font-semibold hover:opacity-95 transition-all hover:-translate-y-0.5"
-            >
-              Learn More
-            </Link>
+          {/* Text column */}
+          <div className="lg:col-span-5">
+            <Reveal>
+              <Eyebrow>About Our School</Eyebrow>
+              <EditorialHeading as="h2" size="md" className="mt-5">
+                A tradition of <em className="italic-accent">scholarship</em> and Ubuntu.
+              </EditorialHeading>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="mt-6 rule-hairline" />
+              <p className="lead mt-6">
+                Founded in 1962 by the Anglican Diocese of Harare, St. Mary's has grown from
+                70 boarding pupils into a thriving community of 1,261 students guided by 55 educators.
+              </p>
+              <p className="lead mt-4">
+                We hold to Christian principles and the virtues of <em className="font-accent">Unhu/Ubuntu</em> —
+                forming students who are intellectually rigorous, morally grounded, and deeply human.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.2}>
+              <Link
+                to="/about"
+                className="group inline-flex items-center gap-3 mt-10 font-body text-[13px] tracking-[0.16em] uppercase font-semibold text-foreground"
+              >
+                <span className="link-editorial">Read our full history</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 ease-editorial group-hover:translate-x-1" />
+              </Link>
+            </Reveal>
           </div>
         </div>
       </div>

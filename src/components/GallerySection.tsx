@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, User } from "lucide-react";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { User, X } from "lucide-react";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion/Reveal";
+import { Eyebrow, EditorialHeading } from "@/components/motion/Editorial";
 
 const GallerySection = () => {
   const [staff, setStaff] = useState<any[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
-  const { ref, isVisible } = useScrollReveal();
 
   useEffect(() => {
     supabase
@@ -20,103 +20,101 @@ const GallerySection = () => {
   }, []);
 
   const hasStaff = staff.length > 0;
+  if (!hasStaff) return null;
+
+  // Slight tilt for each card — Juniper-style
+  const tilts = ["-1deg", "1.5deg", "-2deg", "1deg", "-1.5deg", "2deg"];
 
   return (
-    <section className="py-20 bg-muted">
-      <div className="container mx-auto px-4" ref={ref}>
-        <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-            {hasStaff ? "Meet Our Faculty" : "School Environment"}
-          </h2>
-          <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          {hasStaff && (
-            <p className="font-body text-muted-foreground mt-3 max-w-xl mx-auto">
-              Our dedicated team of professionals is committed to providing excellence in education
+    <section className="py-24 md:py-32 bg-[hsl(var(--muted))]">
+      <div className="container mx-auto px-6 md:px-10">
+        <div className="grid lg:grid-cols-12 gap-10 mb-16">
+          <Reveal className="lg:col-span-6">
+            <Eyebrow>Our Faculty</Eyebrow>
+            <EditorialHeading as="h2" size="lg" className="mt-5">
+              People who shape <em className="italic-accent">people</em>.
+            </EditorialHeading>
+          </Reveal>
+          <Reveal delay={0.1} className="lg:col-span-5 lg:col-start-8 flex items-end">
+            <p className="lead">
+              Meet a few of the dedicated educators who carry the St. Mary's tradition forward each day.
             </p>
-          )}
+          </Reveal>
         </div>
 
-        {hasStaff ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {staff.map((member, i) => (
-              <div
-                key={member.id}
-                className={`bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-2 transition-all duration-500 border border-border group ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
-                style={{ transitionDelay: isVisible ? `${200 + i * 100}ms` : "0ms" }}
+        <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+          {staff.map((member, i) => (
+            <StaggerItem key={member.id}>
+              <button
+                onClick={() => member.bio && setSelectedStaff(member)}
+                className="group block w-full text-left tilt-card bg-[hsl(var(--card))]"
+                style={{ transform: `rotate(${tilts[i % tilts.length]})` }}
               >
-                <div className="relative h-64 overflow-hidden">
+                <div className="relative aspect-[4/5] overflow-hidden bg-[hsl(var(--muted))]">
                   {member.category === "admin" && (
-                    <span className="absolute top-3 right-3 z-10 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-body font-bold">
+                    <span className="absolute top-4 left-4 z-10 bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] px-3 py-1 font-body text-[10px] tracking-[0.18em] uppercase font-semibold">
                       {member.position}
                     </span>
                   )}
                   {member.image_url ? (
-                    <img src={member.image_url} alt={member.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <img
+                      src={member.image_url}
+                      alt={member.name}
+                      className="w-full h-full object-cover transition-transform duration-[1200ms] ease-editorial group-hover:scale-110"
+                    />
                   ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center">
                       <User className="w-16 h-16 text-muted-foreground/30" />
                     </div>
                   )}
-                </div>
-                <div className="p-5 text-center">
-                  <h3 className="font-display text-lg font-bold text-foreground mb-1">{member.name}</h3>
-                  <p className="font-body text-accent-foreground font-semibold text-sm mb-1">{member.position}</p>
-                  <p className="font-body text-muted-foreground text-sm mb-3">{member.subject || member.department}</p>
-                  <div className="flex justify-center gap-2">
-                    {member.bio && (
-                      <button onClick={() => setSelectedStaff(member)} className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all">
-                        <User className="w-4 h-4" />
-                      </button>
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[hsl(215_60%_8%/0.85)] to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                    <h3 className="font-display text-xl font-semibold">{member.name}</h3>
+                    <p className="font-accent italic text-sm text-[hsl(43_78%_75%)] mt-0.5">{member.position}</p>
+                    {(member.subject || member.department) && (
+                      <p className="font-body text-xs text-white/70 mt-1 tracking-wide">{member.subject || member.department}</p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground font-body">Staff gallery coming soon</p>
-        )}
+              </button>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
 
-      {/* Staff Modal */}
+      {/* Modal */}
       {selectedStaff && (
-        <div className="fixed inset-0 z-[100] bg-foreground/80 flex items-center justify-center p-4" onClick={() => setSelectedStaff(null)}>
-          <div className="bg-card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-8">
+        <div
+          className="fixed inset-0 z-[100] bg-[hsl(215_60%_8%/0.85)] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setSelectedStaff(null)}
+        >
+          <div
+            className="bg-[hsl(var(--card))] max-w-2xl w-full max-h-[90vh] overflow-y-auto editorial-frame animate-scale-in relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedStaff(null)}
+              className="absolute top-4 right-4 text-foreground/60 hover:text-foreground transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="p-8 md:p-10">
               <div className="flex items-start gap-6 mb-6 flex-col sm:flex-row">
                 {selectedStaff.image_url ? (
-                  <img src={selectedStaff.image_url} alt={selectedStaff.name} className="w-28 h-28 rounded-full object-cover border-4 border-muted" />
+                  <img src={selectedStaff.image_url} alt={selectedStaff.name} className="w-28 h-28 object-cover" />
                 ) : (
-                  <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center border-4 border-border">
+                  <div className="w-28 h-28 bg-[hsl(var(--muted))] flex items-center justify-center">
                     <User className="w-12 h-12 text-muted-foreground" />
                   </div>
                 )}
                 <div>
-                  <h3 className="font-display text-2xl font-bold text-foreground">{selectedStaff.name}</h3>
-                  <p className="font-body text-accent-foreground font-semibold">{selectedStaff.position}</p>
-                  {selectedStaff.department && (
-                    <span className="inline-block bg-muted px-3 py-1 rounded-full text-sm font-body text-muted-foreground mt-2">{selectedStaff.department}</span>
-                  )}
+                  <Eyebrow>{selectedStaff.department || "Faculty"}</Eyebrow>
+                  <h3 className="headline-editorial text-3xl text-foreground mt-3">{selectedStaff.name}</h3>
+                  <p className="font-accent italic text-lg text-[hsl(var(--secondary))]">{selectedStaff.position}</p>
                 </div>
               </div>
-              {selectedStaff.bio && <p className="font-body text-muted-foreground mb-6 leading-relaxed">{selectedStaff.bio}</p>}
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                {selectedStaff.education && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span className="text-primary text-sm">🎓</span></div>
-                    <div><p className="font-body font-semibold text-foreground text-sm">Education</p><p className="font-body text-muted-foreground text-sm">{selectedStaff.education}</p></div>
-                  </div>
-                )}
-                {selectedStaff.experience && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span className="text-primary text-sm">💼</span></div>
-                    <div><p className="font-body font-semibold text-foreground text-sm">Experience</p><p className="font-body text-muted-foreground text-sm">{selectedStaff.experience}</p></div>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setSelectedStaff(null)} className="flex items-center gap-2 bg-muted text-foreground px-4 py-2 rounded-lg font-body font-semibold text-sm hover:bg-border transition-colors">Close</button>
-              </div>
+              {selectedStaff.bio && <p className="font-body text-muted-foreground leading-relaxed">{selectedStaff.bio}</p>}
             </div>
           </div>
         </div>

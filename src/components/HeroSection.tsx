@@ -1,109 +1,121 @@
 import { Link } from "react-router-dom";
-import { FileText, GraduationCap, ChevronDown, Sparkles } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { FileText, ArrowRight, ChevronDown } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
-import schoolLogo from "@/assets/school-logo.png";
-import { useParallax } from "@/hooks/useParallax";
 
 const HeroSection = () => {
-  const bgRef = useParallax<HTMLDivElement>(0.25);
+  const reduce = useReducedMotion();
 
   const scrollToAbout = () => {
     document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const stats = [
+    { value: "63", suffix: "yrs", label: "Of excellence" },
+    { value: "1,261", label: "Students" },
+    { value: "55", label: "Faculty" },
+    { value: "98%", label: "Pass rate" },
+  ];
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Parallax Background */}
-      <div ref={bgRef} className="absolute inset-0 parallax-bg">
+    <section className="relative min-h-screen flex items-end overflow-hidden bg-[hsl(215_60%_8%)]">
+      {/* Full-bleed Ken Burns image */}
+      <div className="absolute inset-0">
         <img
           src={heroBg}
-          alt="St. Mary's Campus"
-          className="w-full h-full object-cover"
+          alt="St. Mary's High School campus"
+          className={`w-full h-full object-cover ${reduce ? "" : "ken-burns"}`}
           fetchPriority="high"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(212,100%,10%/0.92)] via-[hsl(212,100%,10%/0.78)] to-[hsl(212,100%,15%/0.92)]" />
-        {/* Glowing orbs inside hero */}
-        <div className="orb orb-gold w-[360px] h-[360px] top-1/4 -left-20 opacity-40" />
-        <div className="orb orb-sky w-[320px] h-[320px] bottom-10 -right-16 opacity-40 animate-float-slow" />
+        <div className="absolute inset-0 bg-gradient-hero" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto pt-20">
-        {/* Motto pill */}
-        <div className="mb-6 flex justify-center animate-fade-in-up">
-          <span className="glass-pill inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[hsl(47,100%,75%)] text-xs tracking-[3px] uppercase font-body font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Excellence & Integrity
-          </span>
-        </div>
-
-        {/* Logo */}
-        <div className="mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-          <img
-            src={schoolLogo}
-            alt="St. Mary's High School Crest"
-            className="h-28 md:h-36 mx-auto drop-shadow-2xl"
-            fetchPriority="high"
-            decoding="async"
-          />
-        </div>
-
-        <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          St. Mary's <span className="text-sheen">High School</span>
-        </h1>
-
-        <p className="font-display text-lg md:text-xl text-[hsl(47,100%,75%)] italic mb-8 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-          "We Think We Can and Indeed We Can"
-        </p>
-
-        <p className="font-body text-base md:text-lg text-white/90 mb-8 max-w-2xl mx-auto animate-fade-in-up leading-relaxed drop-shadow-lg" style={{ animationDelay: "0.4s" }}>
-          Founded in 1962, St. Mary's provides a transformative educational experience rooted in Christian values, academic excellence, and the spirit of Ubuntu.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up" style={{ animationDelay: "0.55s" }}>
-          <Link
-            to="/admissions"
-            className="glass-shine bg-[hsl(47,100%,50%)] text-[hsl(212,100%,15%)] px-8 py-4 rounded-xl font-body font-bold text-lg hover:bg-[hsl(47,100%,58%)] transition-all hover:-translate-y-1 shadow-[0_10px_40px_-10px_hsl(47_100%_50%/0.6)] flex items-center justify-center gap-2"
+      <div className="relative z-10 container mx-auto px-6 md:px-10 pb-16 md:pb-24 pt-32">
+        <div className="max-w-4xl">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-6"
           >
-            <FileText className="w-5 h-5" />
-            Apply Now
-          </Link>
-          <Link
-            to="/about"
-            className="glass-dark glass-shine text-white px-8 py-4 rounded-xl font-body font-bold text-lg hover:bg-white/15 transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
-          >
-            <GraduationCap className="w-5 h-5" />
-            Learn More
-          </Link>
-        </div>
+            <span className="eyebrow" style={{ color: "hsl(43 78% 65%)" }}>
+              <span style={{ background: "hsl(43 78% 65%)" }} />
+              Founded 1962 · Anglican Diocese of Harare
+            </span>
+          </motion.div>
 
-        {/* Glass stat cards */}
-        <div className="mt-14 grid grid-cols-3 gap-3 md:gap-5 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.7s" }}>
-          {[
-            { value: "63+", label: "Years" },
-            { value: "1,261", label: "Students" },
-            { value: "55", label: "Teachers" },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className="glass-dark glass-shine rounded-2xl px-3 py-4 md:px-5 md:py-5 hover:-translate-y-1 transition-transform duration-300"
-              style={{ animationDelay: `${0.75 + i * 0.08}s` }}
+          <motion.h1
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="headline-editorial text-white text-5xl sm:text-6xl md:text-7xl lg:text-[88px] mb-6"
+          >
+            An education
+            <br />
+            for <span className="italic-accent">life</span>.
+          </motion.h1>
+
+          <motion.p
+            initial={reduce ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="font-body text-white/85 text-lg md:text-xl max-w-2xl mb-10 leading-relaxed"
+          >
+            For sixty-three years, St. Mary's has shaped scholars, leaders, and people of conscience —
+            rooted in Christian values and the spirit of <em className="font-accent text-[hsl(43_78%_70%)]">Ubuntu</em>.
+          </motion.p>
+
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col sm:flex-row gap-4"
+          >
+            <Link
+              to="/admissions"
+              className="group inline-flex items-center justify-center gap-3 bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] px-8 py-4 font-body font-semibold text-base tracking-wide transition-all duration-500 ease-editorial hover:bg-white hover:gap-4"
             >
-              <p className="font-display text-2xl md:text-3xl font-bold text-sheen">{s.value}</p>
-              <p className="font-body text-[10px] md:text-xs text-white/70 uppercase tracking-wider mt-1">{s.label}</p>
+              <FileText className="w-4 h-4" />
+              Begin admissions
+              <ArrowRight className="w-4 h-4 transition-transform duration-500 ease-editorial group-hover:translate-x-1" />
+            </Link>
+            <Link
+              to="/about"
+              className="group inline-flex items-center justify-center gap-3 border border-white/30 text-white px-8 py-4 font-body font-medium text-base tracking-wide transition-all duration-500 ease-editorial hover:bg-white/10 hover:border-white/60"
+            >
+              Discover our story
+              <ArrowRight className="w-4 h-4 transition-transform duration-500 ease-editorial group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Stat strip — Juniper-style band */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/15 border-t border-b border-white/15"
+        >
+          {stats.map((s) => (
+            <div key={s.label} className="bg-[hsl(215_60%_8%/0.5)] backdrop-blur-sm px-5 py-6 md:px-7 md:py-8">
+              <p className="headline-editorial text-white text-3xl md:text-5xl">
+                {s.value}
+                {s.suffix && <span className="font-accent italic text-xl md:text-2xl text-[hsl(43_78%_65%)] ml-1">{s.suffix}</span>}
+              </p>
+              <p className="font-body text-[10px] md:text-[11px] uppercase tracking-[0.25em] text-white/60 mt-2">{s.label}</p>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Scroll indicator */}
       <button
         onClick={scrollToAbout}
         aria-label="Scroll to next section"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70 animate-bounce cursor-pointer hover:text-[hsl(47,100%,60%)] transition-colors"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 hover:text-[hsl(43_78%_65%)] transition-colors animate-bounce"
       >
-        <ChevronDown className="w-8 h-8" />
+        <ChevronDown className="w-6 h-6" />
       </button>
     </section>
   );
