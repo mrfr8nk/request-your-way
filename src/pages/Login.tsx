@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, LogIn, Shield, BookOpen, Users, Loader2, Fingerprint } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import AuthShell from "@/components/AuthShell";
 import { isPlatformAuthenticatorAvailable, authenticateWithPasskey } from "@/lib/passkey";
 
 type PortalType = "student" | "teacher" | "admin" | "parent";
@@ -195,16 +196,20 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-8">
-      <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block mb-4">
-            <img src={schoolLogo} alt="St. Mary's" className="h-20 w-20 object-contain mx-auto" />
-          </Link>
-          <h1 className="font-display text-3xl font-bold text-primary">St. Mary's Portal</h1>
-          <p className="text-muted-foreground mt-2">Select your portal to sign in</p>
+    <AuthShell quote="An education for life — rooted in scholarship, service, and the spirit of Ubuntu." attribution="— St. Mary's High School">
+      <div className="w-full">
+        <div className="mb-8 lg:hidden text-center">
+          <img src={schoolLogo} alt="St. Mary's" className="h-14 w-14 object-contain mx-auto" />
         </div>
+        <div className="mb-8">
+          <span className="eyebrow">Welcome Back</span>
+          <h1 className="headline-editorial text-4xl md:text-5xl text-foreground mt-4">
+            Sign <em className="italic-accent">in</em>.
+          </h1>
+          <p className="lead mt-3 text-sm">Choose your portal or continue with Google.</p>
+        </div>
+
+
 
         {/* Portal Selection */}
         {!selectedPortal ? (
@@ -351,7 +356,7 @@ const Login = () => {
           </div>
         )}
       </div>
-    </div>
+    </AuthShell>
   );
 };
 
