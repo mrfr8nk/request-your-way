@@ -134,23 +134,23 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-3 p-4 border-b border-white/15 shrink-0">
-          <div className="h-10 w-10 rounded-lg bg-white/15 backdrop-blur p-1 flex items-center justify-center">
+        <div className="flex items-center gap-3 p-5 border-b border-white/10 shrink-0">
+          <div className="h-10 w-10 rounded bg-white/10 backdrop-blur p-1 flex items-center justify-center">
             <img src={schoolLogo} alt="Logo" className="h-8 w-8 object-contain" />
           </div>
-          <div className="min-w-0">
-            <p className="font-display font-bold text-sm truncate">St. Mary's</p>
-            <p className="text-[11px] opacity-80 truncate">{roleLabel} Portal</p>
+          <div className="min-w-0 leading-tight">
+            <p className="font-display font-semibold text-sm text-white truncate">St. Mary's</p>
+            <p className="font-accent italic text-[11px] text-[hsl(43_78%_70%)] truncate">{roleLabel} Portal</p>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto" aria-label="Close menu">
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-white/70" aria-label="Close menu">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="px-3 py-3 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <nav className="px-3 py-5 space-y-5 overflow-y-auto flex-1 min-h-0">
           {Object.entries(grouped).map(([section, items]) => (
             <div key={section}>
-              <p className="px-3 mb-1 text-[10px] uppercase tracking-wider font-semibold text-primary-foreground/50">
+              <p className="px-3 mb-2 font-body text-[10px] uppercase tracking-[0.22em] font-semibold text-[hsl(43_78%_65%)]/70">
                 {section}
               </p>
               <div className="space-y-0.5">
@@ -161,12 +161,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                       key={item.path}
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`relative flex items-center gap-3 px-3 py-2.5 rounded text-[13px] font-medium transition-all duration-300 ease-editorial ${
                         isActive
-                          ? "bg-white/20 text-primary-foreground shadow-sm backdrop-blur"
-                          : "text-primary-foreground/75 hover:bg-white/10 hover:text-primary-foreground"
+                          ? "bg-white/10 text-white"
+                          : "text-white/65 hover:bg-white/5 hover:text-white"
                       }`}
                     >
+                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[hsl(var(--secondary))]" />}
                       <item.icon className="w-4 h-4 shrink-0" />
                       <span className="truncate">{item.label}</span>
                     </Link>
