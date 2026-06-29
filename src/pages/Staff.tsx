@@ -3,7 +3,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Mail, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import heroBg from "@/assets/hero-bg.jpg";
+import EditorialPageHero from "@/components/EditorialPageHero";
+import { Reveal } from "@/components/motion/Reveal";
 
 type Category = "all" | "admin" | "senior" | "teachers";
 
@@ -37,91 +38,91 @@ const Staff = () => {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Hero Banner */}
-      <section className="relative pt-20">
-        <div className="h-64 md:h-80 relative overflow-hidden">
-          <img src={heroBg} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-hero flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-2">Our Staff</h1>
-              <p className="font-body text-white/70 text-lg">Meet Our Dedicated Faculty</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <EditorialPageHero
+        eyebrow="Our People"
+        title="Faculty"
+        italic="& Staff"
+        subtitle="Meet the dedicated educators and leaders who shape the St. Mary's experience every day."
+      />
 
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`px-5 py-2.5 rounded-xl font-body font-semibold transition-all duration-300 ${
-                  activeCategory === cat.value
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "bg-card text-foreground border border-border hover:bg-muted"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {staffMembers.length === 0 ? (
-            <div className="text-center py-16">
-              <User className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground font-body text-lg">Staff directory coming soon.</p>
-              <p className="text-muted-foreground/60 font-body text-sm mt-1">Staff members are managed by the school administration.</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {filtered.map((member) => (
-                <div
-                  key={member.id}
-                  className="bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-2 transition-all duration-300 border border-border group"
+      <section className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-6">
+          <Reveal>
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 mb-14">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setActiveCategory(cat.value)}
+                  className={`px-5 py-2.5 rounded-xl font-body font-semibold transition-all duration-300 ${
+                    activeCategory === cat.value
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "bg-card text-foreground border border-border hover:bg-muted"
+                  }`}
                 >
-                  <div className="relative">
-                    {member.category === "admin" && (
-                      <span className="absolute top-3 right-3 z-10 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-body font-bold">
-                        {member.position}
-                      </span>
-                    )}
-                    <div className="h-64 overflow-hidden">
-                      {member.image_url ? (
-                        <img
-                          src={member.image_url}
-                          alt={member.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <User className="w-16 h-16 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-6 text-center">
-                    <h3 className="font-display text-xl font-bold text-foreground mb-1">{member.name}</h3>
-                    <p className="font-body text-accent-foreground font-semibold text-sm mb-2">{member.position}</p>
-                    <p className="font-body text-muted-foreground text-sm mb-4">{member.subject}</p>
-
-                    <div className="flex justify-center gap-2">
-                      {member.bio && (
-                        <button
-                          onClick={() => setSelectedStaff(member)}
-                          className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                        >
-                          <User className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  {cat.label}
+                </button>
               ))}
             </div>
+          </Reveal>
+
+          {staffMembers.length === 0 ? (
+            <Reveal delay={0.1}>
+              <div className="text-center py-16">
+                <User className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground font-body text-lg">Staff directory coming soon.</p>
+                <p className="text-muted-foreground/60 font-body text-sm mt-1">Staff members are managed by the school administration.</p>
+              </div>
+            </Reveal>
+          ) : (
+            <Reveal delay={0.1}>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                {filtered.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-2 transition-all duration-300 border border-border group"
+                  >
+                    <div className="relative">
+                      {member.category === "admin" && (
+                        <span className="absolute top-3 right-3 z-10 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-body font-semibold">
+                          {member.position}
+                        </span>
+                      )}
+                      <div className="h-64 overflow-hidden">
+                        {member.image_url ? (
+                          <img
+                            src={member.image_url}
+                            alt={member.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <User className="w-16 h-16 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-6 text-center">
+                      <h3 className="font-display text-xl font-semibold text-foreground mb-1">{member.name}</h3>
+                      <p className="font-accent italic text-[hsl(43_78%_55%)] text-sm font-normal mb-2">{member.position}</p>
+                      <p className="font-body text-muted-foreground text-sm mb-4">{member.subject}</p>
+
+                      <div className="flex justify-center gap-2">
+                        {member.bio && (
+                          <button
+                            onClick={() => setSelectedStaff(member)}
+                            className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                          >
+                            <User className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
           )}
         </div>
       </section>
@@ -146,8 +147,8 @@ const Staff = () => {
                   </div>
                 )}
                 <div>
-                  <h3 className="font-display text-2xl font-bold text-foreground">{selectedStaff.name}</h3>
-                  <p className="font-body text-accent-foreground font-semibold">{selectedStaff.position}</p>
+                  <h3 className="font-display text-2xl font-semibold text-foreground">{selectedStaff.name}</h3>
+                  <p className="font-accent italic text-[hsl(43_78%_55%)]">{selectedStaff.position}</p>
                   {selectedStaff.department && (
                     <span className="inline-block bg-muted px-3 py-1 rounded-full text-sm font-body text-muted-foreground mt-2">
                       {selectedStaff.department}

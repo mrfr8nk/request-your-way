@@ -14,6 +14,7 @@ import {
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from "recharts";
+import { Reveal } from "@/components/motion/Reveal";
 
 const StudentDashboard = () => {
   const { user, profile } = useAuth();
@@ -96,25 +97,31 @@ const StudentDashboard = () => {
   return (
     <DashboardLayout role="student">
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              Welcome, {profile?.full_name?.split(" ")[0] || "Student"}!
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {studentProfile && (
-                <span>
-                  {studentProfile.student_id && <span className="font-mono font-semibold text-primary mr-2">{studentProfile.student_id}</span>}
-                  {studentProfile.level?.replace("_", " ").toUpperCase()} • Form {studentProfile.form}
+        <Reveal>
+          <div className="flex items-start justify-between flex-wrap gap-4 pb-2">
+            <div className="space-y-1">
+              <p className="eyebrow">Dashboard / Today</p>
+              <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground leading-tight">
+                Welcome back,{" "}
+                <span className="font-accent italic text-[hsl(43_78%_55%)]">
+                  {profile?.full_name?.split(" ")[0] || "Student"}
                 </span>
-              )}
-              {" — "}{new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-            </p>
+              </h1>
+              <p className="text-muted-foreground text-base mt-2">
+                {studentProfile && (
+                  <span>
+                    {studentProfile.student_id && <span className="font-mono font-semibold text-primary mr-2">{studentProfile.student_id}</span>}
+                    {studentProfile.level?.replace("_", " ").toUpperCase()} • Form {studentProfile.form} —{" "}
+                  </span>
+                )}
+                {new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+              </p>
+            </div>
+            <Badge variant="outline" className="text-xs px-3 py-1 self-start mt-2">
+              <Calendar className="w-3 h-3 mr-1" /> {new Date().getFullYear()} Academic Year
+            </Badge>
           </div>
-          <Badge variant="outline" className="text-xs px-3 py-1">
-            <Calendar className="w-3 h-3 mr-1" /> {new Date().getFullYear()} Academic Year
-          </Badge>
-        </div>
+        </Reveal>
 
         {/* Profile Completion Prompt */}
         {studentProfile && (() => {
@@ -162,6 +169,7 @@ const StudentDashboard = () => {
         )}
 
         {/* Stats */}
+        <Reveal delay={0.08}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="flex items-center gap-4 p-5">
@@ -198,6 +206,7 @@ const StudentDashboard = () => {
             </CardContent>
           </Card>
         </div>
+        </Reveal>
 
         {/* Quick Links */}
         <Card>

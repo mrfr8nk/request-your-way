@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, ClipboardCheck, DollarSign, AlertCircle } from "lucide-react";
+import { Reveal } from "@/components/motion/Reveal";
 import { Link } from "react-router-dom";
 
 const ParentDashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,8 +51,18 @@ const ParentDashboard = () => {
   return (
     <DashboardLayout role="parent">
       <div className="space-y-6">
-        <h1 className="font-display text-2xl font-bold text-foreground">Parent Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Monitor your child's academic progress</p>
+        <Reveal>
+          <div className="space-y-1 pb-2">
+            <p className="eyebrow">Dashboard / Overview</p>
+            <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground leading-tight">
+              Welcome back,{" "}
+              <span className="font-accent italic text-[hsl(43_78%_55%)]">
+                {profile?.full_name?.split(" ")[0] || "Parent"}
+              </span>
+            </h1>
+            <p className="text-muted-foreground text-base mt-2">Monitor your child's academic progress</p>
+          </div>
+        </Reveal>
 
         {children.length === 0 ? (
           <Card>
@@ -63,7 +74,7 @@ const ParentDashboard = () => {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Reveal delay={0.08}><div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {children.map((child, i) => (
                 <Card key={i}>
                   <CardHeader className="pb-2">
@@ -84,9 +95,9 @@ const ParentDashboard = () => {
                   </CardHeader>
                 </Card>
               ))}
-            </div>
+            </div></Reveal>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <Reveal delay={0.14}><div className="grid gap-4 md:grid-cols-3">
               <Link to="/parent/grades">
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-6 flex items-center gap-4">
@@ -120,7 +131,7 @@ const ParentDashboard = () => {
                   </CardContent>
                 </Card>
               </Link>
-            </div>
+            </div></Reveal>
           </>
         )}
       </div>

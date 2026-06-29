@@ -2,12 +2,13 @@ import { useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CheckCircle, FileText, Calendar, DollarSign, Users, BookOpen, Award, Send, Loader2, Upload, Trash2, Camera } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import EditorialPageHero from "@/components/EditorialPageHero";
+import { Reveal } from "@/components/motion/Reveal";
 
 const requirements = [
   "Completed application form",
@@ -136,307 +137,343 @@ const Admissions = () => {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Hero Banner */}
-      <section className="relative pt-20">
-        <div className="h-64 md:h-80 relative overflow-hidden">
-          <img src={heroBg} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-hero flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-2">Admissions</h1>
-              <p className="font-body text-primary-foreground/70 text-lg">Join the St. Mary's Family</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <EditorialPageHero
+        eyebrow="Join Our Family"
+        title="Admissions"
+        italic="& Enrollment"
+        subtitle="Begin your journey at St. Mary's — a place where excellence meets character."
+      />
 
       {/* Why Choose Us */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Why Choose St. Mary's?</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { icon: Award, title: "Academic Excellence", desc: "Consistently high pass rates at both O-Level and A-Level examinations with ZIMSEC curriculum." },
-              { icon: Users, title: "Holistic Development", desc: "We develop the whole person — mind, body, and spirit through academics, sports, and cultural activities." },
-              { icon: BookOpen, title: "Experienced Faculty", desc: "55 dedicated and qualified teachers committed to bringing out the best in every student." },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-card rounded-2xl p-8 shadow-card hover:shadow-card-hover hover:-translate-y-2 transition-all duration-300 border border-border text-center">
-                <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                  <Icon className="w-8 h-8 text-primary" />
+      <section className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-6">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">Our Advantage</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Why Choose <span className="font-accent italic text-[hsl(43_78%_55%)]">St. Mary's?</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {[
+                { icon: Award, title: "Academic Excellence", desc: "Consistently high pass rates at both O-Level and A-Level examinations with ZIMSEC curriculum." },
+                { icon: Users, title: "Holistic Development", desc: "We develop the whole person — mind, body, and spirit through academics, sports, and cultural activities." },
+                { icon: BookOpen, title: "Experienced Faculty", desc: "55 dedicated and qualified teachers committed to bringing out the best in every student." },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="bg-card rounded-2xl p-8 shadow-card hover:shadow-card-hover hover:-translate-y-2 transition-all duration-300 border border-border text-center">
+                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                    <Icon className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="font-display text-xl font-semibold text-foreground mb-3">{title}</h3>
+                  <p className="font-body text-muted-foreground">{desc}</p>
                 </div>
-                <h3 className="font-display text-xl font-bold text-foreground mb-3">{title}</h3>
-                <p className="font-body text-muted-foreground">{desc}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Online Application Form */}
-      <section className="py-16 bg-muted" id="apply">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Online Application</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-            <p className="text-muted-foreground mt-4">Fill out the form below to apply for admission.</p>
-          </div>
+      <section className="py-20 md:py-28 bg-muted" id="apply">
+        <div className="container mx-auto px-6 max-w-3xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">Apply Now</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Online <span className="font-accent italic text-[hsl(43_78%_55%)]">Application</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
+              <p className="text-muted-foreground mt-4">Fill out the form below to apply for admission.</p>
+            </div>
+          </Reveal>
 
-          {submitted ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="font-display text-2xl font-bold text-foreground mb-2">Application Submitted!</h3>
-                <p className="text-muted-foreground mb-6">Thank you for applying to St. Mary's. We will review your application and contact you via email.</p>
-                <Button onClick={() => { setSubmitted(false); setForm({ full_name: "", email: "", phone: "", date_of_birth: "", gender: "", level: "o_level", form: 1, guardian_name: "", guardian_phone: "", guardian_email: "", previous_school: "", address: "", notes: "", national_id: "" }); }}>
-                  Submit Another Application
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Application Form</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Student Information */}
-                  <div>
-                    <h3 className="font-display font-bold text-foreground mb-3">Student Information</h3>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Full Name *</label>
-                        <Input name="full_name" value={form.full_name} onChange={handleChange} placeholder="Enter full name" required />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Email Address *</label>
-                        <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="email@example.com" required />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Phone Number</label>
-                        <Input name="phone" value={form.phone} onChange={handleChange} placeholder="+263 7X XXX XXXX" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Date of Birth</label>
-                        <Input name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Level</label>
-                        <select name="level" value={form.level} onChange={e => { handleChange(e); const l = e.target.value; setForm(prev => ({ ...prev, level: l as any, form: l === "a_level" ? 5 : 1 })); }} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
-                          <option value="zjc">ZJC</option>
-                          <option value="o_level">O Level</option>
-                          <option value="a_level">A Level</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Form</label>
-                        <select name="form" value={form.form} onChange={handleChange} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
-                          {getFormsForLevel().map(f => <option key={f} value={f}>Form {f}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">National ID / Birth Cert No.</label>
-                        <Input name="national_id" value={form.national_id} onChange={handleChange} placeholder="e.g. 63-123456A78" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Sex</label>
-                        <select name="gender" value={form.gender} onChange={handleChange} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
-                          <option value="">Select...</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Guardian Information */}
-                  <div>
-                    <h3 className="font-display font-bold text-foreground mb-3">Guardian / Parent Information</h3>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Guardian Name</label>
-                        <Input name="guardian_name" value={form.guardian_name} onChange={handleChange} placeholder="Full name" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Guardian Phone</label>
-                        <Input name="guardian_phone" value={form.guardian_phone} onChange={handleChange} placeholder="+263 7X XXX XXXX" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-sm font-medium text-foreground mb-1 block">Guardian Email</label>
-                        <Input name="guardian_email" type="email" value={form.guardian_email} onChange={handleChange} placeholder="guardian@example.com" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Info */}
-                  <div>
-                    <h3 className="font-display font-bold text-foreground mb-3">Additional Information</h3>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Previous School</label>
-                        <Input name="previous_school" value={form.previous_school} onChange={handleChange} placeholder="Name of previous school" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Home Address</label>
-                        <Input name="address" value={form.address} onChange={handleChange} placeholder="Full address" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-sm font-medium text-foreground mb-1 block">Additional Notes</label>
-                        <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Any additional information..." rows={3} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm resize-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Document Uploads */}
-                  <div>
-                    <h3 className="font-display font-bold text-foreground mb-3">Document Uploads (Optional)</h3>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Birth Certificate</label>
-                        <input ref={birthRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleDocUpload(e.target.files[0], "birth")} />
-                        <Button type="button" variant="outline" size="sm" onClick={() => birthRef.current?.click()} disabled={uploadingBirth} className="w-full">
-                          <Camera className="w-4 h-4 mr-1" /> {uploadingBirth ? "Uploading..." : birthCertUrl ? "Replace Image" : "Capture / Upload"}
-                        </Button>
-                        {birthCertUrl && <img src={birthCertUrl} alt="Birth cert" className="mt-2 w-full h-24 object-cover rounded border" />}
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Result Slip / Transfer Letter</label>
-                        <input ref={resultRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleDocUpload(e.target.files[0], "result")} />
-                        <Button type="button" variant="outline" size="sm" onClick={() => resultRef.current?.click()} disabled={uploadingResult} className="w-full">
-                          <Camera className="w-4 h-4 mr-1" /> {uploadingResult ? "Uploading..." : resultSlipUrl ? "Replace Image" : "Capture / Upload"}
-                        </Button>
-                        {resultSlipUrl && <img src={resultSlipUrl} alt="Result slip" className="mt-2 w-full h-24 object-cover rounded border" />}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4 mr-2" /> Submit Application</>}
+          <Reveal delay={0.1}>
+            {submitted ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="font-display text-2xl font-semibold text-foreground mb-2">Application Submitted!</h3>
+                  <p className="text-muted-foreground mb-6">Thank you for applying to St. Mary's. We will review your application and contact you via email.</p>
+                  <Button onClick={() => { setSubmitted(false); setForm({ full_name: "", email: "", phone: "", date_of_birth: "", gender: "", level: "o_level", form: 1, guardian_name: "", guardian_phone: "", guardian_email: "", previous_school: "", address: "", notes: "", national_id: "" }); }}>
+                    Submit Another Application
                   </Button>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Application Form</CardTitle></CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Student Information */}
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground mb-3">Student Information</h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Full Name *</label>
+                          <Input name="full_name" value={form.full_name} onChange={handleChange} placeholder="Enter full name" required />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Email Address *</label>
+                          <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="email@example.com" required />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Phone Number</label>
+                          <Input name="phone" value={form.phone} onChange={handleChange} placeholder="+263 7X XXX XXXX" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Date of Birth</label>
+                          <Input name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Level</label>
+                          <select name="level" value={form.level} onChange={e => { handleChange(e); const l = e.target.value; setForm(prev => ({ ...prev, level: l as any, form: l === "a_level" ? 5 : 1 })); }} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
+                            <option value="zjc">ZJC</option>
+                            <option value="o_level">O Level</option>
+                            <option value="a_level">A Level</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Form</label>
+                          <select name="form" value={form.form} onChange={handleChange} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
+                            {getFormsForLevel().map(f => <option key={f} value={f}>Form {f}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">National ID / Birth Cert No.</label>
+                          <Input name="national_id" value={form.national_id} onChange={handleChange} placeholder="e.g. 63-123456A78" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Sex</label>
+                          <select name="gender" value={form.gender} onChange={handleChange} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guardian Information */}
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground mb-3">Guardian / Parent Information</h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Guardian Name</label>
+                          <Input name="guardian_name" value={form.guardian_name} onChange={handleChange} placeholder="Full name" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Guardian Phone</label>
+                          <Input name="guardian_phone" value={form.guardian_phone} onChange={handleChange} placeholder="+263 7X XXX XXXX" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-sm font-medium text-foreground mb-1 block">Guardian Email</label>
+                          <Input name="guardian_email" type="email" value={form.guardian_email} onChange={handleChange} placeholder="guardian@example.com" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Info */}
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground mb-3">Additional Information</h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Previous School</label>
+                          <Input name="previous_school" value={form.previous_school} onChange={handleChange} placeholder="Name of previous school" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Home Address</label>
+                          <Input name="address" value={form.address} onChange={handleChange} placeholder="Full address" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-sm font-medium text-foreground mb-1 block">Additional Notes</label>
+                          <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Any additional information..." rows={3} className="w-full border border-input rounded-lg px-3 py-2 bg-background text-sm resize-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Document Uploads */}
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground mb-3">Document Uploads (Optional)</h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Birth Certificate</label>
+                          <input ref={birthRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleDocUpload(e.target.files[0], "birth")} />
+                          <Button type="button" variant="outline" size="sm" onClick={() => birthRef.current?.click()} disabled={uploadingBirth} className="w-full">
+                            <Camera className="w-4 h-4 mr-1" /> {uploadingBirth ? "Uploading..." : birthCertUrl ? "Replace Image" : "Capture / Upload"}
+                          </Button>
+                          {birthCertUrl && <img src={birthCertUrl} alt="Birth cert" className="mt-2 w-full h-24 object-cover rounded border" />}
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Result Slip / Transfer Letter</label>
+                          <input ref={resultRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleDocUpload(e.target.files[0], "result")} />
+                          <Button type="button" variant="outline" size="sm" onClick={() => resultRef.current?.click()} disabled={uploadingResult} className="w-full">
+                            <Camera className="w-4 h-4 mr-1" /> {uploadingResult ? "Uploading..." : resultSlipUrl ? "Replace Image" : "Capture / Upload"}
+                          </Button>
+                          {resultSlipUrl && <img src={resultSlipUrl} alt="Result slip" className="mt-2 w-full h-24 object-cover rounded border" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+                      {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4 mr-2" /> Submit Application</>}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </Reveal>
         </div>
       </section>
 
       {/* Pass Rates */}
-      <section id="pass-rates" className="py-16 bg-background">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Our Pass Rates</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          </div>
-          <div className="bg-card rounded-2xl shadow-card overflow-hidden border border-border">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-primary">
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">Year</th>
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">O-Level Pass Rate</th>
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">A-Level Pass Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {passRates.map((row, i) => (
-                    <tr key={row.year} className={i % 2 === 0 ? "bg-card" : "bg-muted"}>
-                      <td className="px-6 py-4 font-body font-semibold text-foreground">{row.year}</td>
-                      <td className="px-6 py-4 font-body text-foreground">
-                        <span className="inline-flex items-center gap-1 text-success font-semibold">
-                          <Award className="w-4 h-4" /> {row.oLevel}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-body text-foreground">
-                        <span className="inline-flex items-center gap-1 text-success font-semibold">
-                          <Award className="w-4 h-4" /> {row.aLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <section id="pass-rates" className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">Track Record</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Our Pass <span className="font-accent italic text-[hsl(43_78%_55%)]">Rates</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
             </div>
-          </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="bg-card rounded-2xl shadow-card overflow-hidden border border-border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-primary">
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">Year</th>
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">O-Level Pass Rate</th>
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">A-Level Pass Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {passRates.map((row, i) => (
+                      <tr key={row.year} className={i % 2 === 0 ? "bg-card" : "bg-muted"}>
+                        <td className="px-6 py-4 font-body font-semibold text-foreground">{row.year}</td>
+                        <td className="px-6 py-4 font-body text-foreground">
+                          <span className="inline-flex items-center gap-1 text-success font-semibold">
+                            <Award className="w-4 h-4" /> {row.oLevel}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-body text-foreground">
+                          <span className="inline-flex items-center gap-1 text-success font-semibold">
+                            <Award className="w-4 h-4" /> {row.aLevel}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Requirements */}
-      <section className="py-16 bg-muted">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Admission Requirements</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          </div>
-          <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
-            <div className="grid sm:grid-cols-2 gap-4">
-              {requirements.map((req) => (
-                <div key={req} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
-                  <p className="font-body text-foreground">{req}</p>
-                </div>
-              ))}
+      <section className="py-20 md:py-28 bg-muted">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">What You Need</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Admission <span className="font-accent italic text-[hsl(43_78%_55%)]">Requirements</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
             </div>
-          </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+              <div className="grid sm:grid-cols-2 gap-4">
+                {requirements.map((req) => (
+                  <div key={req} className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                    <p className="font-body text-foreground">{req}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Fee Structure */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Fee Structure (Per Term)</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          </div>
-          <div className="bg-card rounded-2xl shadow-card overflow-hidden border border-border">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-primary">
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">Level</th>
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">Tuition</th>
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">Levy</th>
-                    <th className="px-6 py-4 text-left font-body font-bold text-primary-foreground">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {feeStructure.map((row, i) => (
-                    <tr key={row.level} className={i % 2 === 0 ? "bg-card" : "bg-muted"}>
-                      <td className="px-6 py-4 font-body font-semibold text-foreground">{row.level}</td>
-                      <td className="px-6 py-4 font-body text-foreground">{row.tuition}</td>
-                      <td className="px-6 py-4 font-body text-foreground">{row.levy}</td>
-                      <td className="px-6 py-4 font-body font-bold text-secondary">{row.total}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <section className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">Tuition</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Fee Structure <span className="font-accent italic text-[hsl(43_78%_55%)]">(Per Term)</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
             </div>
-          </div>
-          <p className="font-body text-sm text-muted-foreground mt-4 text-center">
-            * Fees are subject to change. Contact the school for the most current fee structure.
-          </p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="bg-card rounded-2xl shadow-card overflow-hidden border border-border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-primary">
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">Level</th>
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">Tuition</th>
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">Levy</th>
+                      <th className="px-6 py-4 text-left font-body font-semibold text-primary-foreground">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feeStructure.map((row, i) => (
+                      <tr key={row.level} className={i % 2 === 0 ? "bg-card" : "bg-muted"}>
+                        <td className="px-6 py-4 font-body font-semibold text-foreground">{row.level}</td>
+                        <td className="px-6 py-4 font-body text-foreground">{row.tuition}</td>
+                        <td className="px-6 py-4 font-body text-foreground">{row.levy}</td>
+                        <td className="px-6 py-4 font-body font-semibold text-secondary">{row.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p className="font-body text-sm text-muted-foreground mt-4 text-center">
+              * Fees are subject to change. Contact the school for the most current fee structure.
+            </p>
+          </Reveal>
         </div>
       </section>
 
       {/* Application Timeline */}
-      <section className="py-16 bg-muted">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-4">Application Timeline</h2>
-            <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
-          </div>
-          <div className="space-y-0">
-            {timeline.map((item, i) => (
-              <div key={item.month} className="flex gap-6 items-start">
-                <div className="flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-secondary border-4 border-secondary/30 flex-shrink-0" />
-                  {i < timeline.length - 1 && <div className="w-0.5 h-16 bg-border" />}
+      <section className="py-20 md:py-28 bg-muted">
+        <div className="container mx-auto px-6 max-w-3xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="eyebrow mb-3">The Process</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-4">
+                Application <span className="font-accent italic text-[hsl(43_78%_55%)]">Timeline</span>
+              </h2>
+              <div className="w-16 h-1 bg-secondary mx-auto rounded-full" />
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="space-y-0">
+              {timeline.map((item, i) => (
+                <div key={item.month} className="flex gap-6 items-start">
+                  <div className="flex flex-col items-center">
+                    <div className="w-4 h-4 rounded-full bg-secondary border-4 border-secondary/30 flex-shrink-0" />
+                    {i < timeline.length - 1 && <div className="w-0.5 h-16 bg-border" />}
+                  </div>
+                  <div className="pb-8">
+                    <p className="font-body font-semibold text-primary text-sm">{item.month}</p>
+                    <p className="font-body text-foreground">{item.event}</p>
+                  </div>
                 </div>
-                <div className="pb-8">
-                  <p className="font-body font-bold text-primary text-sm">{item.month}</p>
-                  <p className="font-body text-foreground">{item.event}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 

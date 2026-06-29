@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, GraduationCap, BookOpen, Key, Bell, FileText, Calendar, TrendingUp, Clock, Mail, Shield } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import SecurityWidget from "@/components/admin/SecurityWidget";
+import { Reveal } from "@/components/motion/Reveal";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "#f59e0b", "#10b981", "#8b5cf6"];
 
@@ -111,54 +112,64 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout role="admin">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground">School management overview</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Logged-in admin info */}
-            <Card>
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
-                  {(profile?.full_name || "A").charAt(0)}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">{profile?.full_name || "Admin"}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="w-3 h-3" /> {profile?.email || user?.email || "—"}
-                  </p>
-                </div>
-                <Shield className="w-4 h-4 text-primary ml-1" />
-              </CardContent>
-            </Card>
-            {currentSession && (
+      <div className="space-y-8">
+        {/* Hero Header */}
+        <Reveal>
+          <div className="flex items-start justify-between flex-wrap gap-6 pb-2">
+            <div className="space-y-1">
+              <p className="eyebrow">Dashboard / Overview</p>
+              <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground leading-tight">
+                Welcome back,{" "}
+                <span className="font-accent italic text-[hsl(43_78%_55%)]">
+                  {profile?.full_name?.split(" ")[0] || "Admin"}
+                </span>
+              </h1>
+              <p className="text-muted-foreground text-base mt-2">School management overview</p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
               <Card>
                 <CardContent className="flex items-center gap-3 p-3">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-bold">{currentSession.academic_year} — {termLabel(currentSession.term)}</p>
-                    <p className="text-xs text-muted-foreground">{currentSession.start_date} to {currentSession.end_date}</p>
+                  <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                    {(profile?.full_name || "A").charAt(0)}
                   </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{profile?.full_name || "Admin"}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Mail className="w-3 h-3" /> {profile?.email || user?.email || "—"}
+                    </p>
+                  </div>
+                  <Shield className="w-4 h-4 text-primary ml-1" />
                 </CardContent>
               </Card>
-            )}
+              {currentSession && (
+                <Card>
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-bold">{currentSession.academic_year} — {termLabel(currentSession.term)}</p>
+                      <p className="text-xs text-muted-foreground">{currentSession.start_date} to {currentSession.end_date}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {cards.map(c => (
-            <Link key={c.label} to={c.link}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className={`p-3 rounded-lg bg-muted ${c.color}`}><c.icon className="w-5 h-5" /></div>
-                  <div><p className="text-xl font-bold">{c.value}</p><p className="text-xs text-muted-foreground">{c.label}</p></div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <Reveal delay={0.08}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {cards.map(c => (
+              <Link key={c.label} to={c.link}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className={`p-3 rounded-lg bg-muted ${c.color}`}><c.icon className="w-5 h-5" /></div>
+                    <div><p className="text-xl font-bold">{c.value}</p><p className="text-xs text-muted-foreground">{c.label}</p></div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </Reveal>
 
         {/* Enrollment Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
