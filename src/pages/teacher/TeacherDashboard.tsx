@@ -13,6 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
+import { Reveal } from "@/components/motion/Reveal";
 
 const TeacherDashboard = () => {
   const { user, profile } = useAuth();
@@ -131,41 +132,49 @@ const TeacherDashboard = () => {
 
   return (
     <DashboardLayout role="teacher">
-      <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              Welcome back, {profile?.full_name?.split(" ")[0] || "Teacher"}!
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {new Date().toLocaleDateString("en", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </p>
+      <div className="space-y-8">
+        {/* Hero Header */}
+        <Reveal>
+          <div className="flex items-start justify-between flex-wrap gap-4 pb-2">
+            <div className="space-y-1">
+              <p className="eyebrow">Dashboard / Today</p>
+              <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground leading-tight">
+                Welcome back,{" "}
+                <span className="font-accent italic text-[hsl(43_78%_55%)]">
+                  {profile?.full_name?.split(" ")[0] || "Teacher"}
+                </span>
+              </h1>
+              <p className="text-muted-foreground text-base mt-2">
+                {new Date().toLocaleDateString("en", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              </p>
+            </div>
+            <Badge variant="outline" className="text-xs px-3 py-1 self-start mt-2">
+              <Calendar className="w-3 h-3 mr-1" />
+              {new Date().getFullYear()} Academic Year
+            </Badge>
           </div>
-          <Badge variant="outline" className="text-xs px-3 py-1">
-            <Calendar className="w-3 h-3 mr-1" />
-            {new Date().getFullYear()} Academic Year
-          </Badge>
-        </div>
+        </Reveal>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {statCards.map((stat) => (
-            <Link key={stat.label} to={stat.link}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className={`p-3 rounded-lg bg-muted ${stat.color}`}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <Reveal delay={0.08}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {statCards.map((stat) => (
+              <Link key={stat.label} to={stat.link}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="flex items-center gap-4 p-5">
+                    <div className={`p-3 rounded-lg bg-muted ${stat.color}`}>
+                      <stat.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </Reveal>
 
         {/* Assigned Classes */}
         {assignedClasses.length > 0 && (

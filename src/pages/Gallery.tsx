@@ -9,6 +9,8 @@ import galleryScience from "@/assets/gallery-science.jpg";
 import galleryAssembly from "@/assets/gallery-assembly.jpg";
 import galleryLibrary from "@/assets/gallery-library.jpg";
 import headmaster from "@/assets/headmaster.jpg";
+import EditorialPageHero from "@/components/EditorialPageHero";
+import { Reveal } from "@/components/motion/Reveal";
 
 type GalleryCategory = "all" | "campus" | "academics" | "sports" | "events";
 
@@ -43,62 +45,60 @@ const Gallery = () => {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Hero Banner */}
-      <section className="relative pt-20">
-        <div className="h-64 md:h-80 relative overflow-hidden">
-          <img src={heroBg} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-hero flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-2">School Gallery</h1>
-              <p className="font-body text-primary-foreground/70 text-lg">Explore our school life through images</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <EditorialPageHero
+        eyebrow="Campus Life"
+        title="Gallery"
+        italic="& Memories"
+        subtitle="Explore the vibrant life of St. Mary's through our lens — from classrooms to the sports field."
+      />
 
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`px-5 py-2.5 rounded-xl font-body font-semibold transition-all duration-300 ${
-                  activeCategory === cat.value
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "bg-card text-foreground border border-border hover:bg-muted"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+      <section className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-6">
+          <Reveal>
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 mb-14">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setActiveCategory(cat.value)}
+                  className={`px-5 py-2.5 rounded-xl font-body font-semibold transition-all duration-300 ${
+                    activeCategory === cat.value
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "bg-card text-foreground border border-border hover:bg-muted"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </Reveal>
 
           {/* Gallery Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((item, i) => (
-              <div
-                key={item.title + i}
-                className="relative group rounded-xl overflow-hidden h-64 cursor-pointer"
-                onClick={() => setLightbox(item.img)}
-              >
-                <img
-                  src={item.img}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
-                  <h3 className="font-display text-lg font-bold text-primary-foreground translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    {item.title}
-                  </h3>
-                  <p className="font-body text-primary-foreground/80 text-sm translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-                    {item.desc}
-                  </p>
+          <Reveal delay={0.1}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filtered.map((item, i) => (
+                <div
+                  key={item.title + i}
+                  className="relative group rounded-xl overflow-hidden h-64 cursor-pointer"
+                  onClick={() => setLightbox(item.img)}
+                >
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
+                    <h3 className="font-display text-lg font-semibold text-primary-foreground translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                      {item.title}
+                    </h3>
+                    <p className="font-body text-primary-foreground/80 text-sm translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
