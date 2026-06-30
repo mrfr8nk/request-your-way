@@ -27,6 +27,9 @@ const AdminAnnouncements = () => {
   const [content, setContent] = useState("");
   const [targetRole, setTargetRole] = useState<string>("");
   const [isPinned, setIsPinned] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [sendWhatsapp, setSendWhatsapp] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
   const [editAnn, setEditAnn] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
 
@@ -58,8 +61,42 @@ const AdminAnnouncements = () => {
       title: title.trim(), content: content.trim(), author_id: user.id,
       target_role: targetRole || null, is_pinned: isPinned,
     } as any);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Announcement Published!" }); setTitle(""); setContent(""); setIsPinned(false); setTargetRole(""); fetchData(); }
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Announcement Published!" });
+
+    // Broadcast via email / whatsapp if selected
+    if (sendEmail || sendWhatsapp) {
+      setBroadcasting(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/broadcast-announcement`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
+          body: JSON.stringify({
+            title: title.trim(), content: content.trim(),
+            target_role: targetRole || null,
+            channels: { email: sendEmail, whatsapp: sendWhatsapp },
+          }),
+        });
+        const r = await res.json();
+        if (res.ok) {
+          const parts: string[] = [];
+          if (sendEmail) parts.push(`📧 ${r.email_sent || 0} emails`);
+          if (sendWhatsapp) parts.push(`💬 ${r.wa_sent || 0} WhatsApp`);
+          toast({ title: "Broadcast complete", description: parts.join(" · ") });
+        } else {
+          toast({ title: "Broadcast failed", description: r.error || "Unknown error", variant: "destructive" });
+        }
+      } catch (err: any) {
+        toast({ title: "Broadcast failed", description: err.message, variant: "destructive" });
+      } finally {
+        setBroadcasting(false);
+      }
+    }
+
+    setTitle(""); setContent(""); setIsPinned(false); setTargetRole("");
+    setSendEmail(false); setSendWhatsapp(false);
+    fetchData();
   };
 
   const handleDelete = async (id: string) => {
