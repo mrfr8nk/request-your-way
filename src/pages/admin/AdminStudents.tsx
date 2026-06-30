@@ -45,6 +45,7 @@ const AdminStudents = () => {
   const [createEmail, setCreateEmail] = useState("");
   const [createName, setCreateName] = useState("");
   const [createClassId, setCreateClassId] = useState("");
+  const [createWhatsapp, setCreateWhatsapp] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchData = async () => {
@@ -181,15 +182,18 @@ const AdminStudents = () => {
           role: "student",
           class_id: createClassId || null,
           full_name: createName.trim() || null,
+          whatsapp_number: createWhatsapp.trim() || null,
         }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to create account");
-      toast({ title: "Student Account Created!", description: `Activation link sent to ${createEmail}` });
+      const waNote = result.whatsapp_sent ? " · WhatsApp message delivered" : (createWhatsapp ? " · WhatsApp delivery failed" : "");
+      toast({ title: "Student Account Created!", description: `Activation link sent to ${createEmail}${waNote}` });
       setCreateOpen(false);
       setCreateEmail("");
       setCreateName("");
       setCreateClassId("");
+      setCreateWhatsapp("");
       fetchData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -592,6 +596,11 @@ const AdminStudents = () => {
                     {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} (Form {c.form})</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">WhatsApp Number (optional)</label>
+                <Input type="tel" placeholder="+263 77 123 4567" value={createWhatsapp} onChange={e => setCreateWhatsapp(e.target.value)} />
+                <p className="text-xs text-muted-foreground mt-1">If provided, login steps & credentials are also sent via WhatsApp.</p>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
