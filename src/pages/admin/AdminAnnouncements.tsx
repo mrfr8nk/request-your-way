@@ -229,10 +229,25 @@ const AdminAnnouncements = () => {
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pin</label>
                   <Switch checked={isPinned} onCheckedChange={setIsPinned} />
                 </div>
+
+                {/* Broadcast channels */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Also Broadcast Via</label>
+                  <div className="flex gap-1.5">
+                    <button type="button" onClick={() => setSendEmail(v => !v)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${sendEmail ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}>
+                      📧 Email
+                    </button>
+                    <button type="button" onClick={() => setSendWhatsapp(v => !v)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${sendWhatsapp ? "border-green-600 bg-green-600 text-white shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}>
+                      💬 WhatsApp
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <Button onClick={handlePost} className="gap-2 px-6">
-                <Send className="w-4 h-4" /> Publish
+              <Button onClick={handlePost} disabled={broadcasting} className="gap-2 px-6">
+                <Send className="w-4 h-4" /> {broadcasting ? "Broadcasting..." : "Publish"}
               </Button>
             </div>
           </CardContent>
