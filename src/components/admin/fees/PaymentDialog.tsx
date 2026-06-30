@@ -109,16 +109,27 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
     }
 
     // Forward receipt email to linked parents
+    let parentPhones: string[] = [];
     if (parentLinks && parentLinks.length > 0) {
-      const { data: parentProfiles } = await supabase.from("profiles").select("user_id, email").in("user_id", parentLinks.map(l => l.parent_id));
+      const { data: parentProfiles } = await supabase.from("profiles").select("user_id, email, phone").in("user_id", parentLinks.map(l => l.parent_id));
       (parentProfiles || []).forEach(p => {
         if (p.email) {
           supabase.functions.invoke("send-branded-email", {
             body: { email: p.email, type: "fee_receipt", receipt_data: receiptEmailData },
           }).catch(() => {});
         }
+        if (p.phone) parentPhones.push(p.phone);
       });
     }
+
+    // WhatsApp PDF receipt — student guardian + linked parents
+    const { data: studentProfile } = await supabase.from("student_profiles").select("guardian_phone").eq("user_id", record.student_id).maybeSingle();
+    const recipients = new Set<string>([...(parentPhones || []), studentProfile?.guardian_phone].filter(Boolean) as string[]);
+    recipients.forEach(phone => {
+      supabase.functions.invoke("send-whatsapp-receipt", {
+        body: { phone, receipt_data: receiptEmailData },
+      }).catch(() => {});
+    });
 
     setAmount("");
     setReceiptImage(null);
