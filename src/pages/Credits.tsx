@@ -9,7 +9,7 @@ import {
   Shield, Smartphone, Server, Sparkles, Award, Rocket, Coffee, Users,
 } from "lucide-react";
 import developerImg from "@/assets/developer-darrell.jpg";
-import Reveal from "@/components/motion/Reveal";
+import { Reveal } from "@/components/motion/Reveal";
 
 const skills = [
   { name: "React / TypeScript", icon: Code2, level: 95 },
