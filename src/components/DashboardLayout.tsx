@@ -234,7 +234,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           </div>
         </header>
 
-        <main className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+        <main key={location.pathname} className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
           {children}
         </main>
       </div>
