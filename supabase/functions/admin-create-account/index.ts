@@ -8,9 +8,24 @@ const corsHeaders = {
 const WA_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN") || "";
 const WA_PHONE_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") || "";
 
+function normalizeZwPhone(raw: string): string {
+  let d = (raw || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith("263")) return d;
+  if (d.startsWith("0")) return "263" + d.slice(1);
+  if (d.length === 9) return "263" + d; // 771234567
+  return d;
+}
+
 async function sendWhatsApp(to: string, body: string) {
-  if (!WA_TOKEN || !WA_PHONE_ID) return { ok: false, error: "whatsapp_not_configured" };
-  const cleaned = to.replace(/\D/g, "");
+  if (!WA_TOKEN || !WA_PHONE_ID) {
+    console.error("WhatsApp secrets missing", { hasToken: !!WA_TOKEN, hasPhoneId: !!WA_PHONE_ID });
+    return { ok: false, error: "whatsapp_not_configured" };
+  }
+  const cleaned = normalizeZwPhone(to);
+  if (!cleaned || cleaned.length < 10) return { ok: false, error: "invalid_phone: " + to };
+  console.log("Sending WhatsApp to:", cleaned);
   const res = await fetch(`https://graph.facebook.com/v21.0/${WA_PHONE_ID}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${WA_TOKEN}`, "Content-Type": "application/json" },
@@ -21,7 +36,9 @@ async function sendWhatsApp(to: string, body: string) {
       text: { body: body.slice(0, 4000) },
     }),
   });
-  return { ok: res.ok, error: res.ok ? null : await res.text() };
+  const txt = await res.text();
+  if (!res.ok) console.error("WhatsApp API error", res.status, txt);
+  return { ok: res.ok, error: res.ok ? null : `${res.status}: ${txt}` };
 }
 
 Deno.serve(async (req) => {
