@@ -79,8 +79,19 @@ async function uploadAndGetUrl(supabase: any, pdfBytes: Uint8Array, receiptNumbe
   return signed?.signedUrl;
 }
 
+function normalizeZwPhone(raw: string): string {
+  let d = (raw || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith("263")) return d;
+  if (d.startsWith("0")) return "263" + d.slice(1);
+  if (d.length === 9) return "263" + d;
+  return d;
+}
+
 async function sendDocument(to: string, url: string, filename: string, caption: string) {
-  const cleaned = to.replace(/\D/g, "");
+  const cleaned = normalizeZwPhone(to);
+  if (!cleaned || cleaned.length < 10) return { ok: false, body: "invalid_phone: " + to };
   const res = await fetch(`https://graph.facebook.com/v21.0/${WA_PHONE_ID}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${WA_TOKEN}`, "Content-Type": "application/json" },
@@ -92,6 +103,7 @@ async function sendDocument(to: string, url: string, filename: string, caption: 
     }),
   });
   const txt = await res.text();
+  if (!res.ok) console.error("WhatsApp receipt send failed", res.status, txt);
   return { ok: res.ok, body: txt };
 }
 
