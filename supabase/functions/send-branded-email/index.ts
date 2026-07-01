@@ -11,22 +11,18 @@ const LOGO = "https://vojhptlreurutrzftatn.supabase.co/storage/v1/object/public/
 const SCHOOL = "St. Mary's High School";
 const MOTTO = "Excellence & Integrity";
 
-// Resend via Lovable connector gateway. Gmail SMTP retired due to Gmail blocking.
-const RESEND_GATEWAY = 'https://connector-gateway.lovable.dev/resend';
+// Direct Resend API — user provides their own RESEND_API_KEY secret.
 const FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
 
 async function sendSingle(_unused1: string, _unused2: string, to: string, subject: string, html: string) {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
 
-  const res = await fetch(`${RESEND_GATEWAY}/emails`, {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      'X-Connection-Api-Key': RESEND_API_KEY,
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
       from: `${SCHOOL} <${FROM_EMAIL}>`,
@@ -37,8 +33,11 @@ async function sendSingle(_unused1: string, _unused2: string, to: string, subjec
   });
   if (!res.ok) {
     const txt = await res.text();
+    console.error(`Resend ${res.status} sending to ${to}:`, txt);
     throw new Error(`Resend ${res.status}: ${txt}`);
   }
+  const j = await res.json().catch(() => ({}));
+  console.log(`Resend sent to ${to}, id:`, j.id);
 }
 
 async function sendWithRetry(a: string, b: string, to: string, subject: string, html: string, retries = 2) {

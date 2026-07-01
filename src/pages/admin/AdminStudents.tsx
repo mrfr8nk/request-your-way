@@ -187,7 +187,9 @@ const AdminStudents = () => {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to create account");
-      const waNote = result.whatsapp_sent ? " · WhatsApp message delivered" : (createWhatsapp ? " · WhatsApp delivery failed" : "");
+      const waNote = createWhatsapp
+        ? (result.whatsapp_sent ? " · WhatsApp delivered" : ` · WhatsApp failed: ${result.whatsapp_error || "unknown"}`)
+        : "";
       toast({ title: "Student Account Created!", description: `Activation link sent to ${createEmail}${waNote}` });
       setCreateOpen(false);
       setCreateEmail("");
