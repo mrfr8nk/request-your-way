@@ -287,8 +287,12 @@ Kindly settle at your earliest convenience to avoid interruption of services. Re
         if (channel === "whatsapp" || channel === "both") {
           const phoneTargets = new Set<string>([guardianPhone, ...parents.map(p => p.phone || "")].filter(Boolean) as string[]);
           if (phoneTargets.size > 0) {
-            const { data, error } = await supabase.functions.invoke("send-whatsapp-message", {
-              body: { phones: Array.from(phoneTargets), message: waMessage },
+            // Send PDF fee statement instead of plain text
+            const { data, error } = await supabase.functions.invoke("send-whatsapp-fee-reminder", {
+              body: {
+                phones: Array.from(phoneTargets),
+                reminder_data: { ...reminderData, zigRate },
+              },
             });
             if (error) failed++;
             else waSent += (data?.sent || 0);
