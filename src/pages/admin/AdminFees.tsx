@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, RotateCcw, BarChart3, UserSearch, BookOpen, ClipboardCheck, DollarSign, Heart, Shield, X, ScanLine, GraduationCap, Plus, Trash2, Calendar, Mail, Loader2 } from "lucide-react";
+import { Search, RotateCcw, BarChart3, UserSearch, BookOpen, ClipboardCheck, DollarSign, Heart, Shield, X, ScanLine, GraduationCap, Plus, Trash2, Calendar, Mail, Loader2, MessageCircle, Send } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ExportDropdown from "@/components/ExportDropdown";
 import BarcodeScanner from "@/components/admin/fees/BarcodeScanner";
 
@@ -212,9 +215,8 @@ const AdminFees = () => {
 
   const activeScholarships = scholarships.filter(s => s.is_active);
 
-  const sendFeeReminders = async () => {
+  const sendFeeReminders = async (channel: "email" | "whatsapp" | "both") => {
     setSendingReminders(true);
-    // Find students with outstanding balances
     const owing = filtered.filter(f => Number(f.amount_due) - Number(f.amount_paid) > 0);
     if (owing.length === 0) {
       toast({ title: "No outstanding balances", description: "All filtered students are paid up." });
@@ -222,13 +224,32 @@ const AdminFees = () => {
       return;
     }
 
-    let sent = 0;
-    let failed = 0;
+    // Preload parent links to include linked parent phones
+    const studentIds = [...new Set(owing.map(o => o.student_id))];
+    const { data: parentLinks } = await supabase.from("parent_student_links").select("parent_id, student_id").in("student_id", studentIds);
+    const parentIds = [...new Set((parentLinks || []).map((l: any) => l.parent_id))];
+    const { data: parentProfiles } = parentIds.length
+      ? await supabase.from("profiles").select("user_id, email, phone").in("user_id", parentIds)
+      : { data: [] as any[] };
+    const parentsByStudent = new Map<string, { email?: string; phone?: string }[]>();
+    (parentLinks || []).forEach((l: any) => {
+      const p = (parentProfiles || []).find((pp: any) => pp.user_id === l.parent_id);
+      if (!p) return;
+      const arr = parentsByStudent.get(l.student_id) || [];
+      arr.push({ email: p.email, phone: p.phone });
+      parentsByStudent.set(l.student_id, arr);
+    });
+
+    let emailsSent = 0, waSent = 0, failed = 0;
+
     for (const record of owing) {
       const studentEmail = getStudentEmail(record.student_id);
       const sp = studentProfiles.find((p: any) => p.user_id === record.student_id);
       const guardianEmail = sp?.guardian_email;
+      const guardianPhone = sp?.guardian_phone;
+      const parents = parentsByStudent.get(record.student_id) || [];
 
+      const balance = Number(record.amount_due) - Number(record.amount_paid);
       const reminderData = {
         studentName: getStudentName(record.student_id),
         className: getStudentClassName(record.student_id),
@@ -238,26 +259,52 @@ const AdminFees = () => {
         amountPaid: Number(record.amount_paid),
       };
 
+      const waMessage =
+`🔔 *Fee Reminder — St. Mary's High School*
+
+Dear Parent/Guardian,
+
+This is a friendly reminder that ${reminderData.studentName}${reminderData.className ? ` (${reminderData.className})` : ""} has an outstanding balance for *${String(record.term).replace("_"," ").toUpperCase()} ${record.academic_year}*.
+
+💳 *Amount Due:* $${Number(record.amount_due).toFixed(2)}
+✅ *Paid to date:* $${Number(record.amount_paid).toFixed(2)}
+❗ *Balance:* *$${balance.toFixed(2)}*
+
+Kindly settle at your earliest convenience to avoid interruption of services. Reply here for banking details or payment plans.
+
+— St. Mary's Bursar's Office`;
+
       try {
-        if (studentEmail) {
-          await supabase.functions.invoke("send-branded-email", {
-            body: { email: studentEmail, type: "fee_reminder", reminder_data: reminderData },
-          });
-          sent++;
+        if (channel === "email" || channel === "both") {
+          const emailTargets = new Set<string>([studentEmail, guardianEmail, ...parents.map(p => p.email || "")].filter(Boolean));
+          for (const em of emailTargets) {
+            await supabase.functions.invoke("send-branded-email", {
+              body: { email: em, type: "fee_reminder", reminder_data: reminderData },
+            }).catch(() => { failed++; });
+            emailsSent++;
+          }
         }
-        if (guardianEmail && guardianEmail !== studentEmail) {
-          await supabase.functions.invoke("send-branded-email", {
-            body: { email: guardianEmail, type: "fee_reminder", reminder_data: reminderData },
-          });
-          sent++;
+        if (channel === "whatsapp" || channel === "both") {
+          const phoneTargets = new Set<string>([guardianPhone, ...parents.map(p => p.phone || "")].filter(Boolean) as string[]);
+          if (phoneTargets.size > 0) {
+            const { data, error } = await supabase.functions.invoke("send-whatsapp-message", {
+              body: { phones: Array.from(phoneTargets), message: waMessage },
+            });
+            if (error) failed++;
+            else waSent += (data?.sent || 0);
+          }
         }
       } catch {
         failed++;
       }
     }
+
+    const parts: string[] = [];
+    if (emailsSent) parts.push(`${emailsSent} email(s)`);
+    if (waSent) parts.push(`${waSent} WhatsApp message(s)`);
     toast({
       title: "Fee Reminders Sent",
-      description: `${sent} email(s) sent to ${owing.length} student(s) with outstanding balances.${failed > 0 ? ` ${failed} failed.` : ''}`,
+      description: `${parts.join(" and ") || "0 reminders"} delivered for ${owing.length} student(s).${failed > 0 ? ` ${failed} failed.` : ""}`,
     });
     setSendingReminders(false);
   };
@@ -291,10 +338,27 @@ const AdminFees = () => {
             <Button variant="outline" size="sm" onClick={() => setShowCharts(!showCharts)}>
               <BarChart3 className="w-4 h-4 mr-1" /> {showCharts ? "Hide Charts" : "Charts"}
             </Button>
-            <Button variant="outline" size="sm" onClick={sendFeeReminders} disabled={sendingReminders}>
-              {sendingReminders ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-              {sendingReminders ? "Sending..." : "Send Reminders"}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={sendingReminders}>
+                  {sendingReminders ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
+                  {sendingReminders ? "Sending..." : "Send Reminders"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Choose channel</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => sendFeeReminders("email")}>
+                  <Mail className="w-4 h-4 mr-2" /> Email only
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => sendFeeReminders("whatsapp")}>
+                  <MessageCircle className="w-4 h-4 mr-2 text-green-600" /> WhatsApp only
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => sendFeeReminders("both")}>
+                  <Send className="w-4 h-4 mr-2" /> Both channels
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ExportDropdown
               title="Fee Records Report"
               filename="fee_report"
