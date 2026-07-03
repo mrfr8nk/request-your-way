@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Plus, Pin, Trash2, RotateCcw, Edit, Send, Users, GraduationCap, BookOpen, Globe, Megaphone, Clock, PinOff } from "lucide-react";
+import { Bell, Plus, Pin, Trash2, RotateCcw, Edit, Send, Users, GraduationCap, BookOpen, Globe, Megaphone, Clock, PinOff, Heart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ const AUDIENCE_OPTIONS = [
   { value: "", label: "Everyone", icon: Globe, color: "bg-primary/10 text-primary" },
   { value: "teacher", label: "Teachers", icon: BookOpen, color: "bg-secondary/10 text-secondary" },
   { value: "student", label: "Students", icon: GraduationCap, color: "bg-accent/10 text-accent" },
+  { value: "parent", label: "Parents", icon: Heart, color: "bg-pink-500/10 text-pink-600" },
 ];
 
 const AdminAnnouncements = () => {

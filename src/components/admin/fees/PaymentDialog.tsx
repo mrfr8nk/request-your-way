@@ -122,9 +122,14 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
       });
     }
 
-    // WhatsApp PDF receipt — student guardian + linked parents
+    // WhatsApp PDF receipt — student's own phone + student guardian + linked parents
+    const { data: studentProfileFull } = await supabase.from("profiles").select("phone").eq("user_id", record.student_id).maybeSingle();
     const { data: studentProfile } = await supabase.from("student_profiles").select("guardian_phone").eq("user_id", record.student_id).maybeSingle();
-    const recipients = new Set<string>([...(parentPhones || []), studentProfile?.guardian_phone].filter(Boolean) as string[]);
+    const recipients = new Set<string>([
+      studentProfileFull?.phone,
+      ...(parentPhones || []),
+      studentProfile?.guardian_phone,
+    ].filter(Boolean) as string[]);
     recipients.forEach(phone => {
       supabase.functions.invoke("send-whatsapp-receipt", {
         body: { phone, receipt_data: receiptEmailData },
