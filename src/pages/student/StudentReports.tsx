@@ -542,7 +542,7 @@ const StudentReports = () => {
     doc.setFontSize(5);
     doc.setTextColor(180);
     doc.text(
-      `OFFICIAL ACADEMIC RECORD | Serial: ${serialNo} | Generated: ${dateGenerated} | ${schoolInfo.name} | Computer-generated and verified by QR code.`,
+      `OFFICIAL ACADEMIC RECORD  •  Serial: ${serialNo}  •  Doc-Hash: ${docHash}  •  Issued: ${dateGenerated} ${timeGenerated} ${tz}  •  ${schoolInfo.name}  •  Reg: ${schoolInfo.reg}`,
       pw / 2, y + 3.5, { align: "center" }
     );
 
@@ -555,7 +555,18 @@ const StudentReports = () => {
     doc.setFontSize(6);
     doc.setTextColor(160);
     doc.text(`${schoolInfo.name} | ${schoolInfo.address} | Tel: ${schoolInfo.phone}`, pw / 2, y + 4, { align: "center" });
-    doc.text("This is an official academic record. Unauthorized reproduction or alteration is a criminal offense.", pw / 2, y + 8, { align: "center" });
+    doc.text("This is a computer-generated official academic record. Any unauthorized reproduction, alteration or forgery is a criminal offense under the Education Act.", pw / 2, y + 7.5, { align: "center" });
+    doc.text(`Verify online at: ${verifyUrl}`, pw / 2, y + 11, { align: "center" });
+
+    // Page number + issue stamp on every page
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFontSize(6);
+      doc.setTextColor(140);
+      doc.text(`Page ${p} of ${pageCount}`, pw - 15, ph - 5, { align: "right" });
+      doc.text(`Issued ${isoStamp}  •  ${serialNo}  •  ${docHash}`, 15, ph - 5);
+    }
 
     return { doc, serialNo };
   };
