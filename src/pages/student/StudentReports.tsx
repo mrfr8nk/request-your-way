@@ -527,7 +527,7 @@ const StudentReports = () => {
         doc.text(`Scan to verify this report card`, 46, y + 9);
         doc.text(`Serial: ${serialNo}`, 46, y + 13);
         doc.text(`Student: ${profileName} (${studentProfile?.student_id || "N/A"})`, 46, y + 17);
-        doc.text(`Generated: ${dateGenerated}`, 46, y + 21);
+        doc.text(`Issued: ${dateGenerated} at ${timeGenerated} ${tz}`, 46, y + 21);
         doc.setFontSize(5.5);
         doc.setTextColor(160);
         doc.text("Any unauthorized alteration of this document renders it void.", 46, y + 25);
