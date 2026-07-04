@@ -228,7 +228,16 @@ const StudentReports = () => {
 
     const serialNo = `RPT-${year}-${term.replace("term_", "T")}-${Date.now().toString(36).toUpperCase()}`;
     const termLabel = term.replace("_", " ").toUpperCase();
-    const dateGenerated = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+    const nowDate = new Date();
+    const dateGenerated = nowDate.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+    const timeGenerated = nowDate.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Harare";
+    const isoStamp = nowDate.toISOString();
+    // simple document fingerprint (non-cryptographic, deterministic per issue)
+    const fpSrc = `${serialNo}|${user!.id}|${profileName}|${term}|${year}|${avgMark}|${isoStamp}`;
+    let fpHash = 0;
+    for (let i = 0; i < fpSrc.length; i++) { fpHash = ((fpHash << 5) - fpHash + fpSrc.charCodeAt(i)) | 0; }
+    const docHash = Math.abs(fpHash).toString(16).toUpperCase().padStart(8, "0");
     const ordinal = (n: number) => n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
 
     // Save verification record
@@ -253,10 +262,45 @@ const StudentReports = () => {
     // Build PDF with jsPDF
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
     const primaryColor: [number, number, number] = [10, 61, 98];
 
-    // Use pre-cached logo
+    // ---- PDF metadata (shows in Acrobat "Document Properties") ----
+    doc.setProperties({
+      title: `${schoolInfo.name} — Academic Report Card (${termLabel} ${year})`,
+      subject: `Official Academic Record — ${profileName} — Serial ${serialNo}`,
+      author: schoolInfo.name,
+      creator: `${schoolInfo.name} Learner Portal`,
+      keywords: `report card, ${schoolInfo.name}, ${profileName}, ${studentProfile?.student_id || ""}, ${termLabel}, ${year}, ${serialNo}, ${docHash}`,
+    });
+
+    // ---- Watermark: faded logo center + diagonal repeated school name ----
     const logoBase64 = logoBase64Ref.current;
+    if (logoBase64) {
+      try {
+        (doc as any).saveGraphicsState?.();
+        (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.06 }));
+        doc.addImage(logoBase64, "PNG", pw / 2 - 55, ph / 2 - 55, 110, 110);
+        (doc as any).restoreGraphicsState?.();
+      } catch {}
+    }
+    try {
+      (doc as any).saveGraphicsState?.();
+      (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.05 }));
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(28);
+      doc.setTextColor(...primaryColor);
+      const wmText = `${schoolInfo.name.toUpperCase()}  •  OFFICIAL  •  ${serialNo}`;
+      for (let yy = -20; yy < ph + 20; yy += 45) {
+        for (let xx = -20; xx < pw + 20; xx += 140) {
+          doc.text(wmText, xx, yy, { angle: -30 });
+        }
+      }
+      (doc as any).restoreGraphicsState?.();
+      doc.setTextColor(30);
+    } catch {}
+
+    // Header logos
     if (logoBase64) {
       try { doc.addImage(logoBase64, "PNG", 15, 10, 18, 18); } catch {}
       try { doc.addImage(logoBase64, "PNG", pw - 33, 10, 18, 18); } catch {}
@@ -483,7 +527,7 @@ const StudentReports = () => {
         doc.text(`Scan to verify this report card`, 46, y + 9);
         doc.text(`Serial: ${serialNo}`, 46, y + 13);
         doc.text(`Student: ${profileName} (${studentProfile?.student_id || "N/A"})`, 46, y + 17);
-        doc.text(`Generated: ${dateGenerated}`, 46, y + 21);
+        doc.text(`Issued: ${dateGenerated} at ${timeGenerated} ${tz}`, 46, y + 21);
         doc.setFontSize(5.5);
         doc.setTextColor(160);
         doc.text("Any unauthorized alteration of this document renders it void.", 46, y + 25);
@@ -498,7 +542,7 @@ const StudentReports = () => {
     doc.setFontSize(5);
     doc.setTextColor(180);
     doc.text(
-      `OFFICIAL ACADEMIC RECORD | Serial: ${serialNo} | Generated: ${dateGenerated} | ${schoolInfo.name} | Computer-generated and verified by QR code.`,
+      `OFFICIAL ACADEMIC RECORD  •  Serial: ${serialNo}  •  Doc-Hash: ${docHash}  •  Issued: ${dateGenerated} ${timeGenerated} ${tz}  •  ${schoolInfo.name}  •  Reg: ${schoolInfo.reg}`,
       pw / 2, y + 3.5, { align: "center" }
     );
 
@@ -511,7 +555,18 @@ const StudentReports = () => {
     doc.setFontSize(6);
     doc.setTextColor(160);
     doc.text(`${schoolInfo.name} | ${schoolInfo.address} | Tel: ${schoolInfo.phone}`, pw / 2, y + 4, { align: "center" });
-    doc.text("This is an official academic record. Unauthorized reproduction or alteration is a criminal offense.", pw / 2, y + 8, { align: "center" });
+    doc.text("This is a computer-generated official academic record. Any unauthorized reproduction, alteration or forgery is a criminal offense under the Education Act.", pw / 2, y + 7.5, { align: "center" });
+    doc.text(`Verify online at: ${verifyUrl}`, pw / 2, y + 11, { align: "center" });
+
+    // Page number + issue stamp on every page
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFontSize(6);
+      doc.setTextColor(140);
+      doc.text(`Page ${p} of ${pageCount}`, pw - 15, ph - 5, { align: "right" });
+      doc.text(`Issued ${isoStamp}  •  ${serialNo}  •  ${docHash}`, 15, ph - 5);
+    }
 
     return { doc, serialNo };
   };
