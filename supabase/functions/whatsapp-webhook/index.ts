@@ -58,18 +58,40 @@ async function sendDocument(to: string, url: string, filename: string, caption?:
   return { ok: true, error: null };
 }
 
+async function sendImage(to: string, url: string, caption?: string) {
+  const res = await fetch(`https://graph.facebook.com/v21.0/${WA_PHONE_ID}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${WA_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "image",
+      image: { link: url, caption },
+    }),
+  });
+  if (!res.ok) console.error("WA image send error", await res.text());
+}
+
 // ---------- Menus ----------
+const SCHOOL_BANNER_URL = "https://mrfrankk-cdn.hf.space/media/IMG-20251009-WA0103.jpg";
+
 const MAIN_MENU = `🎓 *St. Mary's Learner Portal*
 _Excellence & Integrity_
 
 Reply with a number:
 1️⃣  Latest Report Card (PDF)
-2️⃣  Fees Balance
+2️⃣  Fees Balance (PDF)
 3️⃣  Notices & Announcements
 4️⃣  Attendance Summary
 5️⃣  My Grades
 6️⃣  My Profile
-0️⃣  Logout`;
+0️⃣  Logout
+
+_Reply *menu* anytime to see this again._`;
+
+async function sendMainMenu(phone: string, prefix = "") {
+  await sendImage(phone, SCHOOL_BANNER_URL, `${prefix}${MAIN_MENU}`);
+}
 
 const LOGIN_PROMPT = `👋 Welcome to *St. Mary's WhatsApp Portal*.
 
