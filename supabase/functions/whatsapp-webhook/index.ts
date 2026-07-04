@@ -778,7 +778,7 @@ async function handleMessage(phone: string, body: string) {
 
   // authenticated routing
   if (lower === "menu" || lower === "hi" || lower === "hello") {
-    await sendText(phone, MAIN_MENU);
+    await sendMainMenu(phone);
     return;
   }
 
