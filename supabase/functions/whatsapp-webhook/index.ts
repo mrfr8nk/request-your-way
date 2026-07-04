@@ -790,7 +790,7 @@ async function handleMessage(phone: string, body: string) {
     case "5": return handleGrades(phone, session.user_id);
     case "6": return handleProfile(phone, session.user_id);
     default:
-      await sendText(phone, `🤖 Sorry, I didn't understand "${text}".\n\n${MAIN_MENU}`);
+      await sendMainMenu(phone, `🤖 Sorry, I didn't understand "${text}".\n\n`);
   }
 }
 
