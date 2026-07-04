@@ -123,25 +123,207 @@ async function handleLogin(phone: string, studentIdInput: string) {
 async function handleFees(phone: string, userId: string) {
   const { data: records } = await admin
     .from("fee_records")
-    .select("term, academic_year, amount_due, amount_paid, currency")
+    .select("id, term, academic_year, amount_due, amount_paid, currency, receipt_number, payment_date, payment_method")
     .eq("student_id", userId)
     .is("deleted_at", null)
-    .order("academic_year", { ascending: false });
+    .order("academic_year", { ascending: false })
+    .order("term", { ascending: true });
 
   if (!records || records.length === 0) {
     await sendText(phone, "📋 No fee records found.\n\nReply *menu* to return.");
     return;
   }
 
+  const { data: profile } = await admin.from("profiles").select("full_name").eq("user_id", userId).maybeSingle();
+  const { data: sp } = await admin.from("student_profiles").select("student_id, class_id").eq("user_id", userId).maybeSingle();
+  const { data: cls } = sp?.class_id
+    ? await admin.from("classes").select("name").eq("id", sp.class_id).maybeSingle()
+    : { data: null } as any;
+
   let totalDue = 0, totalPaid = 0;
   const lines = records.map((r: any) => {
     totalDue += Number(r.amount_due);
     totalPaid += Number(r.amount_paid);
     const bal = Number(r.amount_due) - Number(r.amount_paid);
-    return `• ${r.term} ${r.academic_year}: ${r.currency} ${bal.toFixed(2)} ${bal <= 0 ? "✅" : "⚠️"}`;
+    return `• ${r.term.replace("_", " ").toUpperCase()} ${r.academic_year}: $${bal.toFixed(2)} ${bal <= 0 ? "✅" : "⚠️"}`;
   });
   const balance = totalDue - totalPaid;
-  await sendText(phone, `💰 *Fees Summary*\n\n${lines.join("\n")}\n\n*Outstanding: USD ${balance.toFixed(2)}*\n\nReply *menu* to return.`);
+  await sendText(phone, `💰 *Fees Summary*\n\n${lines.join("\n")}\n\n*Outstanding: USD ${balance.toFixed(2)}*\n\n📎 Sending PDF statements for each term${new Set(records.map((r:any)=>r.academic_year)).size > 0 ? " + yearly summary" : ""}...`);
+
+  const studentInfo = {
+    name: profile?.full_name || "Student",
+    code: sp?.student_id || "—",
+    className: cls?.name || "—",
+  };
+
+  // Send a PDF for each term
+  for (const r of records as any[]) {
+    try {
+      const { data: payments } = await admin
+        .from("fee_payments")
+        .select("amount_usd, amount_original, currency, payment_method, receipt_number, created_at")
+        .eq("fee_record_id", r.id)
+        .order("created_at", { ascending: true });
+      const bytes = await buildTermStatementPdf(studentInfo, r, payments || []);
+      const path = `whatsapp/${userId}/${r.academic_year}-${r.term}-${Date.now()}.pdf`;
+      await admin.storage.from("receipts").upload(path, bytes, { contentType: "application/pdf", upsert: true });
+      const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, 60 * 60 * 24 * 30);
+      if (signed?.signedUrl) {
+        await sendDocument(phone, signed.signedUrl,
+          `Fees-${r.academic_year}-${r.term}.pdf`,
+          `💰 ${r.term.replace("_"," ").toUpperCase()} ${r.academic_year} — Balance $${(Number(r.amount_due)-Number(r.amount_paid)).toFixed(2)}`);
+      }
+    } catch (e) { console.error("term pdf error", e); }
+  }
+
+  // Yearly summaries (one per year with >1 term)
+  const years = Array.from(new Set(records.map((r: any) => r.academic_year)));
+  for (const year of years) {
+    const yearRecs = records.filter((r: any) => r.academic_year === year);
+    if (yearRecs.length < 1) continue;
+    try {
+      const bytes = await buildYearlySummaryPdf(studentInfo, year, yearRecs);
+      const path = `whatsapp/${userId}/yearly-${year}-${Date.now()}.pdf`;
+      await admin.storage.from("receipts").upload(path, bytes, { contentType: "application/pdf", upsert: true });
+      const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, 60 * 60 * 24 * 30);
+      if (signed?.signedUrl) {
+        const yDue = yearRecs.reduce((s:number,x:any)=>s+Number(x.amount_due),0);
+        const yPaid = yearRecs.reduce((s:number,x:any)=>s+Number(x.amount_paid),0);
+        await sendDocument(phone, signed.signedUrl,
+          `Fees-Yearly-${year}.pdf`,
+          `📊 Yearly Summary ${year} — Paid $${yPaid.toFixed(2)} / Due $${yDue.toFixed(2)}`);
+      }
+    } catch (e) { console.error("yearly pdf error", e); }
+  }
+
+  await sendText(phone, "✅ Done. Reply *menu* to return.");
+}
+
+async function buildTermStatementPdf(student: any, record: any, payments: any[]): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]);
+  const helv = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const navy = rgb(0.0, 0.13, 0.4);
+  const gold = rgb(0.83, 0.69, 0.22);
+  const ink = rgb(0.12, 0.12, 0.15);
+  const muted = rgb(0.5, 0.5, 0.55);
+
+  // Header
+  page.drawRectangle({ x: 0, y: 762, width: 595, height: 80, color: navy });
+  page.drawRectangle({ x: 0, y: 758, width: 595, height: 4, color: gold });
+  page.drawText("ST. MARY'S HIGH SCHOOL", { x: 40, y: 810, size: 18, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("Excellence & Integrity", { x: 40, y: 790, size: 10, font: helv, color: rgb(0.95, 0.85, 0.5) });
+  page.drawText("FEE STATEMENT", { x: 430, y: 800, size: 13, font: bold, color: rgb(1, 1, 1) });
+
+  // Student info
+  let y = 720;
+  const label = (l: string, v: string, x: number) => {
+    page.drawText(l, { x, y, size: 9, font: helv, color: muted });
+    page.drawText(v, { x, y: y - 14, size: 12, font: bold, color: ink });
+  };
+  label("Student", student.name, 40);
+  label("Student ID", student.code, 320);
+  y -= 38;
+  label("Class", student.className, 40);
+  label("Term / Year", `${String(record.term).replace("_"," ").toUpperCase()} ${record.academic_year}`, 320);
+  y -= 50;
+
+  // Balance box
+  const due = Number(record.amount_due), paid = Number(record.amount_paid);
+  const bal = due - paid;
+  page.drawRectangle({ x: 40, y: y - 90, width: 515, height: 90, borderColor: navy, borderWidth: 1.5, color: rgb(0.98, 0.97, 0.92) });
+  page.drawText("BALANCE OVERVIEW", { x: 56, y: y - 18, size: 11, font: bold, color: navy });
+  const row = (l: string, v: string, ry: number, big=false) => {
+    page.drawText(l, { x: 60, y: ry, size: 11, font: helv, color: ink });
+    page.drawText(v, { x: 480, y: ry, size: big ? 14 : 11, font: bold, color: big ? (bal>0?rgb(0.7,0.1,0.1):rgb(0.1,0.5,0.2)) : ink });
+  };
+  row("Amount Due", `$${due.toFixed(2)}`, y - 40);
+  row("Amount Paid", `$${paid.toFixed(2)}`, y - 58);
+  row("Balance", `$${bal.toFixed(2)}`, y - 78, true);
+  y -= 110;
+
+  // Payment history table
+  page.drawText("PAYMENT HISTORY", { x: 40, y, size: 11, font: bold, color: navy });
+  y -= 6;
+  page.drawRectangle({ x: 40, y: y - 18, width: 515, height: 18, color: navy });
+  const headers = [["Date", 48], ["Receipt", 140], ["Method", 280], ["Amount", 470]];
+  headers.forEach(([h, x]) => page.drawText(String(h), { x: x as number, y: y - 12, size: 9, font: bold, color: rgb(1,1,1) }));
+  y -= 22;
+
+  if (!payments.length) {
+    page.drawText("No payments recorded yet.", { x: 48, y: y - 4, size: 10, font: helv, color: muted });
+    y -= 20;
+  } else {
+    payments.forEach((p, i) => {
+      if (i % 2 === 0) page.drawRectangle({ x: 40, y: y - 14, width: 515, height: 16, color: rgb(0.97, 0.97, 0.98) });
+      const d = new Date(p.created_at).toLocaleDateString("en-GB");
+      page.drawText(d, { x: 48, y: y - 10, size: 9, font: helv, color: ink });
+      page.drawText(String(p.receipt_number || "—").slice(0, 20), { x: 140, y: y - 10, size: 9, font: helv, color: ink });
+      page.drawText(String(p.payment_method || "—"), { x: 280, y: y - 10, size: 9, font: helv, color: ink });
+      page.drawText(`$${Number(p.amount_usd || 0).toFixed(2)}`, { x: 470, y: y - 10, size: 9, font: bold, color: ink });
+      y -= 16;
+    });
+  }
+
+  // Footer
+  page.drawRectangle({ x: 0, y: 0, width: 595, height: 4, color: gold });
+  page.drawText(`Generated ${new Date().toLocaleString("en-GB")} — St. Mary's High School`, { x: 40, y: 20, size: 8, font: helv, color: muted });
+
+  return await pdf.save();
+}
+
+async function buildYearlySummaryPdf(student: any, year: number, records: any[]): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]);
+  const helv = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const navy = rgb(0.0, 0.13, 0.4);
+  const gold = rgb(0.83, 0.69, 0.22);
+  const ink = rgb(0.12, 0.12, 0.15);
+  const muted = rgb(0.5, 0.5, 0.55);
+
+  page.drawRectangle({ x: 0, y: 762, width: 595, height: 80, color: navy });
+  page.drawRectangle({ x: 0, y: 758, width: 595, height: 4, color: gold });
+  page.drawText("ST. MARY'S HIGH SCHOOL", { x: 40, y: 810, size: 18, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("Excellence & Integrity", { x: 40, y: 790, size: 10, font: helv, color: rgb(0.95, 0.85, 0.5) });
+  page.drawText(`YEAR ${year} SUMMARY`, { x: 400, y: 800, size: 13, font: bold, color: rgb(1, 1, 1) });
+
+  let y = 720;
+  page.drawText(`Student: ${student.name}   |   ID: ${student.code}   |   Class: ${student.className}`, { x: 40, y, size: 10, font: helv, color: ink });
+  y -= 30;
+
+  // Terms table
+  page.drawRectangle({ x: 40, y: y - 18, width: 515, height: 18, color: navy });
+  const heads = [["Term", 48], ["Due", 250], ["Paid", 350], ["Balance", 460]];
+  heads.forEach(([h, x]) => page.drawText(String(h), { x: x as number, y: y - 12, size: 10, font: bold, color: rgb(1, 1, 1) }));
+  y -= 22;
+
+  let ttlDue = 0, ttlPaid = 0;
+  records.forEach((r, i) => {
+    const due = Number(r.amount_due), paid = Number(r.amount_paid);
+    ttlDue += due; ttlPaid += paid;
+    if (i % 2 === 0) page.drawRectangle({ x: 40, y: y - 16, width: 515, height: 18, color: rgb(0.97, 0.97, 0.98) });
+    page.drawText(String(r.term).replace("_", " ").toUpperCase(), { x: 48, y: y - 11, size: 10, font: helv, color: ink });
+    page.drawText(`$${due.toFixed(2)}`, { x: 250, y: y - 11, size: 10, font: helv, color: ink });
+    page.drawText(`$${paid.toFixed(2)}`, { x: 350, y: y - 11, size: 10, font: helv, color: ink });
+    const bal = due - paid;
+    page.drawText(`$${bal.toFixed(2)}`, { x: 460, y: y - 11, size: 10, font: bold, color: bal > 0 ? rgb(0.7,0.1,0.1) : rgb(0.1,0.5,0.2) });
+    y -= 18;
+  });
+
+  y -= 10;
+  page.drawRectangle({ x: 40, y: y - 60, width: 515, height: 60, borderColor: navy, borderWidth: 1.5, color: rgb(0.98, 0.97, 0.92) });
+  page.drawText("YEAR TOTALS", { x: 56, y: y - 16, size: 11, font: bold, color: navy });
+  page.drawText(`Total Due: $${ttlDue.toFixed(2)}`, { x: 60, y: y - 36, size: 11, font: bold, color: ink });
+  page.drawText(`Total Paid: $${ttlPaid.toFixed(2)}`, { x: 240, y: y - 36, size: 11, font: bold, color: ink });
+  const yb = ttlDue - ttlPaid;
+  page.drawText(`Balance: $${yb.toFixed(2)}`, { x: 420, y: y - 36, size: 12, font: bold, color: yb > 0 ? rgb(0.7,0.1,0.1) : rgb(0.1,0.5,0.2) });
+
+  page.drawRectangle({ x: 0, y: 0, width: 595, height: 4, color: gold });
+  page.drawText(`Generated ${new Date().toLocaleString("en-GB")} — St. Mary's High School`, { x: 40, y: 20, size: 8, font: helv, color: muted });
+
+  return await pdf.save();
 }
 
 async function handleNotices(phone: string) {
