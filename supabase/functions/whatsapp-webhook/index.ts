@@ -139,7 +139,7 @@ async function handleLogin(phone: string, studentIdInput: string) {
   } as any);
 
   const { data: prof } = await admin.from("profiles").select("full_name").eq("user_id", profile.user_id).maybeSingle();
-  await sendText(phone, `✅ Logged in as *${prof?.full_name ?? studentId}*\n\n${MAIN_MENU}`);
+  await sendMainMenu(phone, `✅ Logged in as *${prof?.full_name ?? studentId}*\n\n`);
 }
 
 async function handleFees(phone: string, userId: string) {
