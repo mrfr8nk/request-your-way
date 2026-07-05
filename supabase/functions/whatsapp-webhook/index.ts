@@ -90,7 +90,7 @@ Reply with a number:
 _Reply *menu* anytime to see this again._`;
 
 async function sendMainMenu(phone: string, prefix = "") {
-  await sendImage(phone, SCHOOL_BANNER_URL, `${prefix}${MAIN_MENU}`);
+  await sendText(phone, `${prefix}${MAIN_MENU}`);
 }
 
 const LOGIN_PROMPT = `👋 Welcome to *St. Mary's WhatsApp Portal*.
