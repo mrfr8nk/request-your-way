@@ -3,7 +3,7 @@
 // - POST /whatsapp-webhook  -> incoming message handler
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PDFDocument, StandardFonts, rgb, PDFFont } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, StandardFonts, rgb, PDFFont, degrees } from "https://esm.sh/pdf-lib@1.17.1";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
 const corsHeaders = {
@@ -458,6 +458,13 @@ const SCHOOL = {
   address: "P.O. Box 123, Harare, Zimbabwe",
   phone: "+263 242 123 456",
 };
+
+function docHash(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  const hex = (h >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
 
 async function getAppOrigin(): Promise<string> {
   const { data } = await admin.from("system_settings").select("value").eq("key", "app_url").maybeSingle();
