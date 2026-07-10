@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Search, GraduationCap, DollarSign, BookOpen, ClipboardCheck, ArrowLeft, User } from "lucide-react";
+import { Search, GraduationCap, DollarSign, BookOpen, ClipboardCheck, ArrowLeft, User, ArrowUpDown } from "lucide-react";
 import ExportDropdown from "@/components/ExportDropdown";
 
 const levelLabel = (l: string) => ({ zjc: "ZJC", o_level: "O Level", a_level: "A Level" }[l] || l);
 const termLabel = (t: string) => t?.replace("_", " ").toUpperCase() || "";
+type SortField = "name" | "student_id" | "form" | "level" | "status";
 
 const AdminStudentHistory = () => {
   const [search, setSearch] = useState("");
@@ -26,29 +27,58 @@ const AdminStudentHistory = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     supabase.from("subjects").select("id, name").is("deleted_at", null).then(r => setSubjects(r.data || []));
     supabase.from("classes").select("id, name, form, level").then(r => setClasses(r.data || []));
   }, []);
 
-  const searchStudents = async () => {
-    if (!search.trim()) return;
+  const searchStudents = async (showAll = false) => {
+    if (!search.trim() && !showAll) return;
     setLoading(true);
     const q = search.toLowerCase();
     const { data: sps } = await supabase.from("student_profiles").select("*");
-    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, email, phone, avatar_url");
     const profileMap: Record<string, any> = {};
     (profiles || []).forEach(p => { profileMap[p.user_id] = p; });
     const results = (sps || []).filter(sp => {
       const p = profileMap[sp.user_id];
-      return (p?.full_name || "").toLowerCase().includes(q) ||
+      const matchesSearch = showAll || (p?.full_name || "").toLowerCase().includes(q) ||
         (sp.student_id || "").toLowerCase().includes(q) ||
         (p?.email || "").toLowerCase().includes(q);
-    }).map(sp => ({ ...sp, profile: profileMap[sp.user_id] }));
+      const status = sp.graduation_status === "graduated" ? "graduated" : sp.is_active ? "active" : "inactive";
+      return matchesSearch && (statusFilter === "all" || statusFilter === status);
+    }).map(sp => ({ ...sp, profile: profileMap[sp.user_id] })).sort((a, b) => {
+      const statusA = a.graduation_status === "graduated" ? "graduated" : a.is_active ? "active" : "inactive";
+      const statusB = b.graduation_status === "graduated" ? "graduated" : b.is_active ? "active" : "inactive";
+      const values: Record<SortField, [string, string]> = {
+        name: [a.profile?.full_name || "", b.profile?.full_name || ""],
+        student_id: [a.student_id || "", b.student_id || ""],
+        form: [String(a.form || ""), String(b.form || "")],
+        level: [levelLabel(a.level), levelLabel(b.level)],
+        status: [statusA, statusB],
+      };
+      const [av, bv] = values[sortField];
+      const cmp = av.localeCompare(bv, undefined, { numeric: true });
+      return sortDir === "asc" ? cmp : -cmp;
+    });
     setStudents(results);
     setLoading(false);
   };
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(field)}>
+      <span className="flex items-center gap-1">{children} <ArrowUpDown className={`w-3 h-3 ${sortField === field ? "text-primary" : "text-muted-foreground"}`} /></span>
+    </TableHead>
+  );
 
   const loadHistory = async (student: any) => {
     setSelected(student);
@@ -111,9 +141,13 @@ const AdminStudentHistory = () => {
           {/* Student Info Card */}
           <Card>
             <CardContent className="flex flex-wrap items-center gap-6 p-5">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold">
-                {(profile?.full_name || "S").charAt(0)}
-              </div>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile?.full_name || "Student"} className="w-14 h-14 rounded-full object-cover border border-border" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold">
+                  {(profile?.full_name || "S").charAt(0)}
+                </div>
+              )}
               <div className="space-y-1">
                 <h2 className="text-lg font-bold">{profile?.full_name || "Unknown"}</h2>
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
@@ -294,12 +328,12 @@ const AdminStudentHistory = () => {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Student History</h1>
-          <p className="text-muted-foreground">Search any student (active or graduated) to view their complete school record</p>
+            <p className="text-muted-foreground">Search active, inactive, or graduated students to view their complete school record</p>
         </div>
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -310,8 +344,17 @@ const AdminStudentHistory = () => {
                   onKeyDown={e => e.key === "Enter" && searchStudents()}
                 />
               </div>
+              <select className="border border-input rounded-lg px-3 py-2 bg-background text-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="graduated">Graduated</option>
+              </select>
               <Button onClick={searchStudents} disabled={loading}>
                 {loading ? "Searching..." : "Search"}
+              </Button>
+              <Button variant="outline" onClick={() => searchStudents(true)} disabled={loading}>
+                Load All Records
               </Button>
             </div>
           </CardContent>
@@ -324,17 +367,27 @@ const AdminStudentHistory = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Student ID</TableHead>
-                    <TableHead>Form</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                    <SortHeader field="name">Name</SortHeader>
+                    <SortHeader field="student_id">Student ID</SortHeader>
+                    <SortHeader field="form">Form</SortHeader>
+                    <SortHeader field="level">Level</SortHeader>
+                    <SortHeader field="status">Status</SortHeader>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.map(s => (
                     <TableRow key={s.id} className={!s.is_active ? "opacity-60" : ""}>
+                      <TableCell>
+                        {s.profile?.avatar_url ? (
+                          <img src={s.profile.avatar_url} alt={s.profile?.full_name || "Student"} className="w-8 h-8 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                            {(s.profile?.full_name || "S").charAt(0)}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{s.profile?.full_name || "—"}</TableCell>
                       <TableCell className="font-mono text-sm">{s.student_id || "—"}</TableCell>
                       <TableCell>Form {s.form}</TableCell>
