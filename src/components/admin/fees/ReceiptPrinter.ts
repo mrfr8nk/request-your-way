@@ -76,15 +76,34 @@ const generateSerial = (receiptNumber: string): string => {
   return `SER-${ts}-${rand}`;
 };
 
+const docHash = (seed: string): string => {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  const hex = (h >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+};
+
+const esc = (value: unknown): string => String(value ?? "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#039;");
+
 export const printReceipt = (record: any, studentName: string, zigRate: number, className?: string) => {
   const balance = Number(record.amount_due) - Number(record.amount_paid);
   const serial = generateSerial(record.receipt_number || "");
   const barcodeData = record.receipt_number || serial;
   const barcodeSvg = generateBarcodeSVG(barcodeData);
-  const printDate = new Date().toLocaleString();
+  const issuedAt = new Date();
+  const printDate = issuedAt.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Harare";
+  const hash = docHash(`${record.receipt_number || serial}|${studentName}|${record.amount_due}|${record.amount_paid}|${record.payment_date || printDate}`);
   const paymentDate = record.payment_date
     ? new Date(record.payment_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
     : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const method = methodLabel((record as any).payment_method || "cash");
+  const notes = (record.notes || "").toString().trim();
 
   const w = window.open("", "_blank", "width=500,height=750");
   if (!w) return;
@@ -93,7 +112,7 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Receipt ${record.receipt_number}</title>
+  <title>Official Receipt ${esc(record.receipt_number || serial)}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
@@ -101,25 +120,60 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
     
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      max-width: 420px;
+      max-width: 460px;
       margin: 0 auto;
       padding: 24px 20px;
       font-size: 13px;
-      color: #1a1a1a;
-      background: #fff;
+      color: #111827;
+      background: #f8fafc;
     }
 
     .receipt {
-      border: 2px solid #1a1a1a;
+      position: relative;
+      border: 2px solid #0b1f4d;
       border-radius: 8px;
       overflow: hidden;
+      background: #fffef7;
+      box-shadow: 0 12px 30px rgba(15,23,42,.12);
+    }
+
+    .receipt:before {
+      content: "ST. MARY'S HIGH SCHOOL  ST. MARY'S HIGH SCHOOL  ST. MARY'S HIGH SCHOOL";
+      position: absolute;
+      left: -80px;
+      top: 280px;
+      width: 700px;
+      transform: rotate(-34deg);
+      color: rgba(11,31,77,.06);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 5px;
+      white-space: nowrap;
+      z-index: 0;
+    }
+
+    .receipt > * { position: relative; z-index: 1; }
+
+    .crest {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 2px solid #d3af37;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #d3af37;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
     }
 
     .receipt-header {
-      background: #1a1a1a;
+      background: #0b1f4d;
       color: #fff;
       text-align: center;
-      padding: 20px 16px 16px;
+      padding: 18px 16px 16px;
+      border-bottom: 5px solid #d3af37;
     }
 
     .receipt-header .school-name {
@@ -133,34 +187,49 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
     .receipt-header .school-sub {
       font-size: 10px;
       letter-spacing: 1px;
-      color: #ccc;
+      color: #f6d66b;
       text-transform: uppercase;
+    }
+
+    .receipt-header .school-contact {
+      font-size: 9px;
+      color: #dbe4ff;
+      margin-top: 5px;
     }
 
     .receipt-badge {
       display: inline-block;
-      background: #fff;
-      color: #1a1a1a;
+      background: #d3af37;
+      color: #0b1f4d;
       font-size: 11px;
       font-weight: 700;
-      padding: 4px 14px;
-      border-radius: 20px;
+      padding: 5px 16px;
+      border-radius: 4px;
       margin-top: 12px;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
 
-    .receipt-meta {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 16px;
-      background: #f5f5f5;
-      border-bottom: 1px solid #e0e0e0;
-      font-size: 11px;
-      color: #666;
+    .receipt-badge-sub {
+      font-size: 9px;
+      color: #e5e7eb;
+      margin-top: 5px;
+      letter-spacing: .5px;
     }
 
-    .receipt-meta strong { color: #1a1a1a; }
+    .receipt-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      padding: 0;
+      background: #e5e7eb;
+      border-bottom: 1px solid #d1d5db;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    .receipt-meta span { background: #f8fafc; padding: 10px 12px; }
+    .receipt-meta strong { color: #111827; display: block; margin-top: 2px; }
 
     .receipt-body { padding: 16px; }
 
@@ -219,7 +288,7 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
       background: #f0f7f0;
       margin: 8px -16px 0;
       padding: 12px 16px;
-      border-top: 2px solid #1a1a1a;
+      border-top: 2px solid #0b1f4d;
       font-size: 15px;
     }
 
@@ -250,6 +319,33 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
       padding: 16px;
       border-top: 1px dashed #ccc;
       background: #fafafa;
+    }
+
+    .security-strip {
+      margin: 0 16px 14px;
+      padding: 10px;
+      border: 1px solid #d3af37;
+      background: #fffbeb;
+      font-size: 9px;
+      color: #525252;
+      line-height: 1.5;
+    }
+
+    .notes-box {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .forgery-warning {
+      color: #991b1b !important;
+      font-weight: 700;
+      margin-top: 6px;
     }
 
     .barcode-section svg {
@@ -311,38 +407,43 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
 <body>
   <div class="receipt">
     <div class="receipt-header">
+      <div class="crest">SM</div>
       <div class="school-name">St. Mary's High School</div>
-      <div class="school-sub">We Think We Can and Indeed We Can</div>
-      <div class="receipt-badge">Fee Payment Receipt</div>
+      <div class="school-sub">Excellence & Integrity</div>
+      <div class="school-contact">P.O. Box 123 · Harare · Zimbabwe · admin@stmarys.ac.zw</div>
+      <div class="receipt-badge">Official Receipt</div>
+      <div class="receipt-badge-sub">Original · Non-Transferable · Computer Generated</div>
     </div>
 
     <div class="receipt-meta">
-      <span>Receipt: <strong>${record.receipt_number || "—"}</strong></span>
-      <span>Date: <strong>${paymentDate}</strong></span>
+      <span>Receipt No.<strong>${esc(record.receipt_number || "—")}</strong></span>
+      <span>Payment Date<strong>${esc(paymentDate)}</strong></span>
+      <span>Issued Time<strong>${esc(printDate)}</strong></span>
+      <span>Document Hash<strong>${esc(hash)}</strong></span>
     </div>
 
     <div class="receipt-body">
       <div class="info-grid">
         <div class="info-item full">
           <div class="label">Student Name</div>
-          <div class="value">${studentName}</div>
+          <div class="value">${esc(studentName)}</div>
         </div>
         ${className ? `
         <div class="info-item">
           <div class="label">Class</div>
-          <div class="value">${className}</div>
+          <div class="value">${esc(className)}</div>
         </div>` : ""}
         <div class="info-item">
           <div class="label">Academic Year</div>
-          <div class="value">${record.academic_year}</div>
+          <div class="value">${esc(record.academic_year)}</div>
         </div>
         <div class="info-item">
           <div class="label">Term</div>
-          <div class="value">${record.term.replace("_", " ").toUpperCase()}</div>
+          <div class="value">${esc(record.term.replace("_", " ").toUpperCase())}</div>
         </div>
         <div class="info-item">
           <div class="label">Payment Method</div>
-          <div class="value">${methodLabel((record as any).payment_method || "cash")}</div>
+          <div class="value">${esc(method)}</div>
         </div>
       </div>
 
@@ -367,22 +468,29 @@ export const printReceipt = (record: any, studentName: string, zigRate: number, 
       <div class="paid-stamp">
         <span>Paid in Full</span>
       </div>` : ""}
+
+      ${notes ? `<div class="notes-box"><strong>Notes</strong><br/>${esc(notes)}</div>` : ""}
+    </div>
+
+    <div class="security-strip">
+      SECURITY: Doc ${esc(hash)} · Serial ${esc(serial)} · Generated ${esc(printDate)} ${esc(timezone)} · Verify authenticity at portal.stmarys.ac.zw/verify.
     </div>
 
     <div class="barcode-section">
       ${barcodeSvg}
-      <div class="barcode-text">${barcodeData}</div>
-      <div class="serial-row">Serial: ${serial} &bull; Printed: ${printDate}</div>
+      <div class="barcode-text">${esc(barcodeData)}</div>
+      <div class="serial-row">Serial: ${esc(serial)} &bull; Printed: ${esc(printDate)}</div>
     </div>
 
     <div class="receipt-footer">
       <p class="thank-you">Thank you for your payment</p>
       <p>This is a computer-generated receipt and is valid without signature.<br/>
       For queries, contact the accounts office.</p>
+      <p class="forgery-warning">Any alteration, duplication or forgery of this official receipt is prohibited.</p>
     </div>
   </div>
 
-  <div class="watermark">St. Mary's High School &mdash; Fee Management System</div>
+  <div class="watermark">St. Mary's High School &mdash; Official Fee Management System &mdash; ${esc(hash)}</div>
 
   <script>window.onload = function() { window.print(); }</script>
 </body>
