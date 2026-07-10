@@ -350,7 +350,7 @@ const AdminStudentHistory = () => {
                 <option value="inactive">Inactive</option>
                 <option value="graduated">Graduated</option>
               </select>
-              <Button onClick={searchStudents} disabled={loading}>
+              <Button onClick={() => searchStudents()} disabled={loading}>
                 {loading ? "Searching..." : "Search"}
               </Button>
               <Button variant="outline" onClick={() => searchStudents(true)} disabled={loading}>
