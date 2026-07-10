@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { methodLabel } from "./FeeConstants";
-import { History } from "lucide-react";
+import { History, ImageIcon } from "lucide-react";
 
 interface Props {
   feeRecordId: string | null;
@@ -28,7 +28,7 @@ const PaymentHistoryDialog = ({ feeRecordId, studentName, open, onOpenChange, zi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" /> Payment History — {studentName}
@@ -48,6 +48,7 @@ const PaymentHistoryDialog = ({ feeRecordId, studentName, open, onOpenChange, zi
                   <TableHead>Amount</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Receipt</TableHead>
+                  <TableHead>Proof / Notes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -68,6 +69,14 @@ const PaymentHistoryDialog = ({ feeRecordId, studentName, open, onOpenChange, zi
                     </TableCell>
                     <TableCell className="text-xs">{methodLabel(p.payment_method)}</TableCell>
                     <TableCell className="text-xs font-mono">{p.receipt_number || "—"}</TableCell>
+                    <TableCell className="min-w-40">
+                      {p.receipt_image_url ? (
+                        <a href={p.receipt_image_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-1">
+                          <ImageIcon className="w-3 h-3" /> View photo
+                        </a>
+                      ) : null}
+                      <div className="text-xs text-muted-foreground whitespace-pre-wrap">{p.notes || "—"}</div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -3,7 +3,7 @@
 // - POST /whatsapp-webhook  -> incoming message handler
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PDFDocument, StandardFonts, rgb, PDFFont } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, StandardFonts, rgb, PDFFont, degrees } from "https://esm.sh/pdf-lib@1.17.1";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
 const corsHeaders = {
@@ -183,7 +183,7 @@ async function handleFees(phone: string, userId: string) {
     try {
       const { data: payments } = await admin
         .from("fee_payments")
-        .select("amount_usd, amount_original, currency, payment_method, receipt_number, created_at")
+        .select("amount_usd, amount_original, currency, payment_method, receipt_number, notes, created_at")
         .eq("fee_record_id", r.id)
         .order("created_at", { ascending: true });
       const bytes = await buildTermStatementPdf(studentInfo, r, payments || []);
@@ -226,20 +226,38 @@ async function buildTermStatementPdf(student: any, record: any, payments: any[])
   const page = pdf.addPage([595, 842]);
   const helv = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const navy = rgb(0.0, 0.13, 0.4);
+  const oblq = await pdf.embedFont(StandardFonts.HelveticaOblique);
+  const navy = rgb(0.04, 0.11, 0.31);
   const gold = rgb(0.83, 0.69, 0.22);
   const ink = rgb(0.12, 0.12, 0.15);
   const muted = rgb(0.5, 0.5, 0.55);
+  const hash = docHash(`${student.code}|${record.id}|${record.amount_due}|${record.amount_paid}|${new Date().toISOString()}`);
+  const issued = new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+
+  for (let yy = -60; yy < 900; yy += 92) {
+    for (let xx = -70; xx < 680; xx += 270) {
+      page.drawText("ST. MARY'S HIGH SCHOOL", { x: xx, y: yy, size: 20, font: bold, color: rgb(0.93, 0.93, 0.96), rotate: degrees(-30), opacity: 0.35 });
+    }
+  }
 
   // Header
-  page.drawRectangle({ x: 0, y: 762, width: 595, height: 80, color: navy });
-  page.drawRectangle({ x: 0, y: 758, width: 595, height: 4, color: gold });
-  page.drawText("ST. MARY'S HIGH SCHOOL", { x: 40, y: 810, size: 18, font: bold, color: rgb(1, 1, 1) });
-  page.drawText("Excellence & Integrity", { x: 40, y: 790, size: 10, font: helv, color: rgb(0.95, 0.85, 0.5) });
-  page.drawText("FEE STATEMENT", { x: 430, y: 800, size: 13, font: bold, color: rgb(1, 1, 1) });
+  page.drawRectangle({ x: 0, y: 742, width: 595, height: 100, color: navy });
+  page.drawRectangle({ x: 0, y: 736, width: 595, height: 6, color: gold });
+  page.drawCircle({ x: 60, y: 792, size: 25, borderColor: gold, borderWidth: 2, color: rgb(0.12, 0.24, 0.5) });
+  page.drawText("SM", { x: 46, y: 785, size: 18, font: bold, color: gold });
+  page.drawText("ST. MARY'S HIGH SCHOOL", { x: 100, y: 812, size: 18, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("Excellence & Integrity", { x: 100, y: 794, size: 10, font: oblq, color: rgb(0.95, 0.85, 0.5) });
+  page.drawText("P.O. Box 123, Harare, Zimbabwe · +263 242 123 456", { x: 100, y: 778, size: 8, font: helv, color: rgb(0.85, 0.87, 0.95) });
+  page.drawRectangle({ x: 405, y: 790, width: 155, height: 28, color: gold });
+  page.drawText("OFFICIAL FEE STATEMENT", { x: 414, y: 799, size: 10, font: bold, color: navy });
+  page.drawText("Original · Non-Transferable", { x: 414, y: 778, size: 7, font: helv, color: rgb(0.9, 0.9, 0.95) });
+
+  page.drawRectangle({ x: 40, y: 700, width: 515, height: 28, color: rgb(0.985, 0.98, 0.94), borderColor: rgb(0.85, 0.85, 0.88), borderWidth: 0.5 });
+  page.drawText(`Issued: ${issued}`, { x: 52, y: 710, size: 8, font: bold, color: ink });
+  page.drawText(`Doc Hash: ${hash}`, { x: 410, y: 710, size: 8, font: bold, color: ink });
 
   // Student info
-  let y = 720;
+  let y = 670;
   const label = (l: string, v: string, x: number) => {
     page.drawText(l, { x, y, size: 9, font: helv, color: muted });
     page.drawText(v, { x, y: y - 14, size: 12, font: bold, color: ink });
@@ -288,9 +306,20 @@ async function buildTermStatementPdf(student: any, record: any, payments: any[])
     });
   }
 
+  const noteText = payments.map((p: any) => p.notes).filter(Boolean).join(" | ");
+  if (noteText && y > 82) page.drawText(`Notes: ${noteText.slice(0, 130)}`, { x: 40, y: Math.max(82, y - 20), size: 8, font: helv, color: muted });
+
   // Footer
+  page.drawRectangle({ x: 40, y: 42, width: 515, height: 32, color: rgb(0.97, 0.97, 1), borderColor: rgb(0.85, 0.85, 0.88), borderWidth: 0.5 });
+  page.drawText(`SECURITY: ${hash} · Generated ${issued} · Verify at portal.stmarys.ac.zw/verify`, { x: 52, y: 58, size: 7, font: bold, color: navy });
+  page.drawText("Any alteration, duplication or forgery of this official school document is prohibited.", { x: 52, y: 48, size: 7, font: oblq, color: muted });
   page.drawRectangle({ x: 0, y: 0, width: 595, height: 4, color: gold });
-  page.drawText(`Generated ${new Date().toLocaleString("en-GB")} — St. Mary's High School`, { x: 40, y: 20, size: 8, font: helv, color: muted });
+  page.drawText(`Generated by St. Mary's Finance Portal — ${hash}`, { x: 40, y: 20, size: 8, font: helv, color: muted });
+
+  pdf.setTitle(`Official Fee Statement ${student.code} ${record.academic_year} ${record.term}`);
+  pdf.setAuthor("ST. MARY'S HIGH SCHOOL");
+  pdf.setSubject(`Fee statement for ${student.name}`);
+  pdf.setKeywords([hash, student.code || "", "official-fee-statement"]);
 
   return await pdf.save();
 }
@@ -458,6 +487,13 @@ const SCHOOL = {
   address: "P.O. Box 123, Harare, Zimbabwe",
   phone: "+263 242 123 456",
 };
+
+function docHash(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  const hex = (h >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
 
 async function getAppOrigin(): Promise<string> {
   const { data } = await admin.from("system_settings").select("value").eq("key", "app_url").maybeSingle();

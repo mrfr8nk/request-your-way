@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Search, CheckCircle, XCircle, Clock, Eye, Loader2, RotateCcw } from "lucide-react";
+import { FileText, Search, CheckCircle, XCircle, Clock, Eye, Loader2, RotateCcw, ImageIcon, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ExportDropdown from "@/components/ExportDropdown";
 
@@ -23,6 +23,7 @@ const AdminApplications = () => {
   const [approving, setApproving] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
+  const [documentUrls, setDocumentUrls] = useState<{ birth?: string; result?: string }>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -40,6 +41,25 @@ const AdminApplications = () => {
   const getFilteredClasses = (app: any) => {
     if (!app) return [];
     return classes.filter(c => c.level === app.level && c.form === app.form);
+  };
+
+  const signApplicationDocument = async (pathOrUrl?: string | null) => {
+    if (!pathOrUrl) return "";
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    const { data } = await supabase.storage.from("application-documents").createSignedUrl(pathOrUrl, 60 * 60);
+    return data?.signedUrl || "";
+  };
+
+  const openApplication = async (app: any) => {
+    setSelected(app);
+    setSelectedClass(app.class_id || "");
+    setDetailOpen(true);
+    setDocumentUrls({});
+    const [birth, result] = await Promise.all([
+      signApplicationDocument(app.birth_cert_image_url),
+      signApplicationDocument(app.result_slip_image_url),
+    ]);
+    setDocumentUrls({ birth, result });
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -190,12 +210,12 @@ const AdminApplications = () => {
               <TableCell className="text-sm text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</TableCell>
               <TableCell>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => { setSelected(a); setDetailOpen(true); setSelectedClass(a.class_id || ""); }}>
+                  <Button variant="ghost" size="sm" onClick={() => openApplication(a)}>
                     <Eye className="w-4 h-4" />
                   </Button>
                   {a.status === "pending" && (
                     <>
-                      <Button variant="ghost" size="sm" onClick={() => { setSelected(a); setDetailOpen(true); setSelectedClass(a.class_id || ""); }}>
+                      <Button variant="ghost" size="sm" onClick={() => openApplication(a)}>
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => updateStatus(a.id, "rejected")}>
@@ -204,7 +224,7 @@ const AdminApplications = () => {
                     </>
                   )}
                   {a.status === "rejected" && (
-                    <Button variant="ghost" size="sm" title="Reconsider" onClick={() => { setSelected(a); setDetailOpen(true); setSelectedClass(a.class_id || ""); }}>
+                    <Button variant="ghost" size="sm" title="Reconsider" onClick={() => openApplication(a)}>
                       <RotateCcw className="w-4 h-4 text-yellow-600" />
                     </Button>
                   )}
@@ -294,6 +314,26 @@ const AdminApplications = () => {
                   {selected.reviewed_at && <div><span className="text-muted-foreground">Reviewed:</span> {new Date(selected.reviewed_at).toLocaleString()}</div>}
                   <div><span className="text-muted-foreground">Account:</span> {selected.user_id ? "✅ Created" : "❌ No account"}</div>
                 </div>
+
+                {(selected.birth_cert_image_url || selected.result_slip_image_url) && (
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Uploaded Documents</p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {selected.birth_cert_image_url && (
+                        <a href={documentUrls.birth || undefined} target="_blank" rel="noreferrer" className="group rounded-lg border border-border overflow-hidden bg-muted block">
+                          {documentUrls.birth ? <img src={documentUrls.birth} alt="Birth certificate" className="h-36 w-full object-cover" /> : <div className="h-36 grid place-items-center text-xs text-muted-foreground">Loading document...</div>}
+                          <div className="p-2 text-xs font-medium flex items-center justify-between">Birth Certificate <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" /></div>
+                        </a>
+                      )}
+                      {selected.result_slip_image_url && (
+                        <a href={documentUrls.result || undefined} target="_blank" rel="noreferrer" className="group rounded-lg border border-border overflow-hidden bg-muted block">
+                          {documentUrls.result ? <img src={documentUrls.result} alt="Result slip or transfer letter" className="h-36 w-full object-cover" /> : <div className="h-36 grid place-items-center text-xs text-muted-foreground">Loading document...</div>}
+                          <div className="p-2 text-xs font-medium flex items-center justify-between">Result Slip / Transfer Letter <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" /></div>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {(selected.status === "pending" || selected.status === "rejected") && (
                   <div className="space-y-4 border-t border-border pt-4">

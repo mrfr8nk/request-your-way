@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PAYMENT_METHODS, generateReceipt, methodLabel } from "./FeeConstants";
@@ -24,6 +25,7 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
   const [currency, setCurrency] = useState("USD");
   const [method, setMethod] = useState("cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [paymentNotes, setPaymentNotes] = useState("");
 
   if (!record) return null;
 
@@ -38,6 +40,11 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
 
     const newPaid = Number(record.amount_paid) + payUSD;
     const receipt = generateReceipt();
+    const existingNotes = (record.notes || "").toString().trim();
+    const cleanPaymentNotes = paymentNotes.trim();
+    const combinedNotes = cleanPaymentNotes
+      ? [existingNotes, `${new Date().toLocaleString("en-GB")} payment note: ${cleanPaymentNotes}`].filter(Boolean).join("\n")
+      : existingNotes || null;
 
     // Update the fee record
     const { error } = await supabase.from("fee_records").update({
@@ -46,6 +53,7 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
       payment_date: new Date().toISOString().split("T")[0],
       payment_method: method,
       receipt_image_url: receiptImage,
+      notes: combinedNotes,
     }).eq("id", record.id);
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -61,6 +69,7 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
       payment_method: method,
       receipt_number: receipt,
       receipt_image_url: receiptImage,
+      notes: cleanPaymentNotes || null,
       paid_by: user?.id,
     });
 
@@ -100,6 +109,7 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
       paymentMethod: methodLabel(method),
       paymentDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " at " + new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
       className: getStudentClass?.(record.student_id),
+      notes: cleanPaymentNotes || undefined,
     };
 
     if (studentEmail) {
@@ -138,6 +148,7 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
 
     setAmount("");
     setReceiptImage(null);
+    setPaymentNotes("");
     onOpenChange(false);
     onPaid();
   };
@@ -187,6 +198,16 @@ const PaymentDialog = ({ record, open, onOpenChange, zigRate, getStudentName, ge
             onChange={setReceiptImage}
             folder="fee-payments"
           />
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Payment Notes</label>
+            <Textarea
+              placeholder="Reference number, payer name, receipt details, or bursar note..."
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
 
           <Button className="w-full" onClick={handlePay}>Confirm Payment</Button>
         </div>
