@@ -683,7 +683,7 @@ Kindly settle at your earliest convenience to avoid interruption of services. Re
                     {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                   </select>
                 </div>
-                <div><label className="text-xs text-muted-foreground">Notes</label><Input value={editFee.notes || ""} onChange={e => setEditFee({ ...editFee, notes: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Notes (payment history is appended here)</label><Textarea rows={5} className="whitespace-pre-wrap" value={editFee.notes || ""} onChange={e => setEditFee({ ...editFee, notes: e.target.value })} /></div>
                 <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
               </div>
             )}
