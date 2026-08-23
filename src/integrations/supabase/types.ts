@@ -409,6 +409,24 @@ export type Database = {
         }
         Relationships: []
       }
+      db_heartbeat: {
+        Row: {
+          beat_at: string
+          id: string
+          source: string
+        }
+        Insert: {
+          beat_at?: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          beat_at?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       fee_payments: {
         Row: {
           amount_original: number
@@ -1800,6 +1818,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      record_db_heartbeat: { Args: { _source?: string }; Returns: undefined }
       verify_report_by_serial: {
         Args: { _serial: string }
         Returns: {
