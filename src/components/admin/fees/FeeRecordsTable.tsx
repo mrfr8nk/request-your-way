@@ -136,14 +136,16 @@ const FeeRecordsTable = ({ records, loading, zigRate, getStudentName, onPay, onE
                 <TableHead>Method</TableHead>
                 <TableHead>Receipt</TableHead>
                 <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("status")}>Status <SortIcon col="status" /></TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : sorted.length === 0 ? (
-                <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No records found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No records found.</TableCell></TableRow>
+
               ) : sorted.map((f) => {
                 const balance = Number(f.amount_due) - Number(f.amount_paid);
                 const isPaid = balance <= 0;
