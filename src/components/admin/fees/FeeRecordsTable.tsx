@@ -167,8 +167,16 @@ const FeeRecordsTable = ({ records, loading, zigRate, getStudentName, onPay, onE
                         {isPaid ? "Paid" : "Owing"}
                       </span>
                     </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      {f.notes ? (
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3" title={f.notes}>{f.notes}</p>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+
                         {!isPaid && (
                           <Button variant="default" size="sm" onClick={() => onPay(f)} title="Record Payment" className="gap-1">
                             <Receipt className="w-4 h-4" />
