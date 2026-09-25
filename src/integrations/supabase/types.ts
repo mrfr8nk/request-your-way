@@ -427,6 +427,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_items: {
+        Row: {
+          academic_year: number
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          form: number | null
+          id: string
+          is_optional: boolean
+          level: Database["public"]["Enums"]["academic_level"] | null
+          name: string
+          term: Database["public"]["Enums"]["school_term"] | null
+        }
+        Insert: {
+          academic_year?: number
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          form?: number | null
+          id?: string
+          is_optional?: boolean
+          level?: Database["public"]["Enums"]["academic_level"] | null
+          name: string
+          term?: Database["public"]["Enums"]["school_term"] | null
+        }
+        Update: {
+          academic_year?: number
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          form?: number | null
+          id?: string
+          is_optional?: boolean
+          level?: Database["public"]["Enums"]["academic_level"] | null
+          name?: string
+          term?: Database["public"]["Enums"]["school_term"] | null
+        }
+        Relationships: []
+      }
       fee_payments: {
         Row: {
           amount_original: number
@@ -954,6 +996,68 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_submissions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          fee_record_id: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          proof_path: string | null
+          reference: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          student_id: string
+          submitted_by: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          fee_record_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          proof_path?: string | null
+          reference?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id: string
+          submitted_by?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          fee_record_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          proof_path?: string | null
+          reference?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id?: string
+          submitted_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_submissions_fee_record_id_fkey"
+            columns: ["fee_record_id"]
+            isOneToOne: false
+            referencedRelation: "fee_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       petty_cash: {
         Row: {
           amount: number
@@ -1442,6 +1546,27 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_positions: {
+        Row: {
+          created_at: string
+          id: string
+          position: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       student_profiles: {
         Row: {
           address: string | null
@@ -1786,6 +1911,7 @@ export type Database = {
         }
         Returns: string
       }
+      can_view_finance: { Args: { _user_id: string }; Returns: boolean }
       consume_access_code: {
         Args: { _code: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: Json
@@ -1793,6 +1919,10 @@ export type Database = {
       create_direct_conversation: {
         Args: { _recipient_id: string; _title?: string }
         Returns: string
+      }
+      has_position: {
+        Args: { _position: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -1805,6 +1935,7 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_finance_staff: { Args: { _user_id: string }; Returns: boolean }
       link_student_to_parent: {
         Args: { _parent_phone: string; _student_id: string }
         Returns: Json
