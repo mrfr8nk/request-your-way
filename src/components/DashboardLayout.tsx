@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useFinanceAccess } from "@/hooks/useFinanceAccess";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -37,6 +38,9 @@ const teacherNav: NavItem[] = [
   { label: "Record Book", path: "/teacher/record-book", icon: BookOpen, section: "Tools" },
   { label: "Teaching AI", path: "/teacher/ai-assistant", icon: Sparkles, section: "Tools" },
   { label: "Verify Documents", path: "/teacher/verify", icon: ShieldCheck, section: "Tools" },
+  { label: "Payment Approvals", path: "/finance/approvals", icon: Receipt, section: "Finance" },
+  { label: "Fee Structure", path: "/finance/structure", icon: DollarSign, section: "Finance" },
+  { label: "Finance Reports", path: "/finance/reports", icon: BarChart3, section: "Finance" },
   { label: "Settings", path: "/teacher/profile", icon: Settings, section: "Account" },
 ];
 
@@ -75,6 +79,9 @@ const adminNav: NavItem[] = [
   { label: "Events", path: "/admin/events", icon: CalendarDays, section: "Engagement" },
   { label: "Fee Management", path: "/admin/fees", icon: DollarSign, section: "Finance" },
   { label: "Finance & Petty Cash", path: "/admin/finance", icon: Receipt, section: "Finance" },
+  { label: "Fee Structure", path: "/finance/structure", icon: DollarSign, section: "Finance" },
+  { label: "Payment Approvals", path: "/finance/approvals", icon: ShieldCheck, section: "Finance" },
+  { label: "Finance Reports", path: "/finance/reports", icon: BarChart3, section: "Finance" },
   { label: "Messages", path: "/admin/messages", icon: MessageSquare, section: "Communication" },
   { label: "Announcements", path: "/admin/announcements", icon: Bell, section: "Communication" },
   { label: "Homepage Updates", path: "/admin/homepage", icon: Newspaper, section: "CMS" },
@@ -111,7 +118,9 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = role === "admin" ? adminNav : role === "teacher" ? teacherNav : role === "parent" ? parentNav : studentNav;
+  const fin = useFinanceAccess();
+  const baseNav = role === "admin" ? adminNav : role === "teacher" ? teacherNav : role === "parent" ? parentNav : studentNav;
+  const navItems = role === "teacher" && !fin.canView ? baseNav.filter((n) => !n.path.startsWith("/finance")) : baseNav;
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
   // Group nav items by section
