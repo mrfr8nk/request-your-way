@@ -8,6 +8,13 @@
       "when": 1790340200952,
       "tag": "0000_fee_items_proofs_positions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790463339041,
+      "tag": "0001_harden_receipts_storage",
+      "breakpoints": true
     }
   ]
 }
