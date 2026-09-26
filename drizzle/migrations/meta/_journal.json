@@ -15,6 +15,13 @@
       "when": 1790463339041,
       "tag": "0001_harden_receipts_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790465408586,
+      "tag": "0002_login_events_gallery_items",
+      "breakpoints": true
     }
   ]
 }
