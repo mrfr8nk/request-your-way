@@ -7,6 +7,7 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { DollarSign, History, ChevronDown, ChevronUp } from "lucide-react";
 import { methodLabel } from "@/components/admin/fees/FeeConstants";
+import SubmitProofDialog from "@/components/parent/SubmitProofDialog";
 
 const ParentFees = () => {
   const { user } = useAuth();
@@ -73,6 +74,7 @@ const ParentFees = () => {
                       <span className="text-green-600">Paid: <strong>${totalPaid.toFixed(2)}</strong></span>
                       <span className={balance > 0 ? "text-destructive" : "text-green-600"}>Balance: <strong>${balance.toFixed(2)}</strong></span>
                     </div>
+                    <SubmitProofDialog studentId={childId} feeRecords={childFees} />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
