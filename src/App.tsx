@@ -56,6 +56,10 @@ import AdminCodes from "./pages/admin/AdminCodes";
 import AdminGrades from "./pages/admin/AdminGrades";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminFees from "./pages/admin/AdminFees";
+import FeeStructure from "./pages/finance/FeeStructure";
+import PaymentApprovals from "./pages/finance/PaymentApprovals";
+import FinanceReports from "./pages/finance/FinanceReports";
+import { FinanceRoute } from "@/hooks/useFinanceAccess";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminApplications from "./pages/admin/AdminApplications";
 import AdminFinance from "./pages/admin/AdminFinance";
@@ -156,6 +160,9 @@ const App = () => (
               <Route path="/admin/rankings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRankings /></ProtectedRoute>} />
               <Route path="/admin/messages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMessages /></ProtectedRoute>} />
               <Route path="/admin/announcements" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAnnouncements /></ProtectedRoute>} />
+              <Route path="/finance/structure" element={<FinanceRoute><FeeStructure /></FinanceRoute>} />
+              <Route path="/finance/approvals" element={<FinanceRoute><PaymentApprovals /></FinanceRoute>} />
+              <Route path="/finance/reports" element={<FinanceRoute><FinanceReports /></FinanceRoute>} />
               <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={["admin"]}><AdminFees /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSettings /></ProtectedRoute>} />
               <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={["admin"]}><AdminFinance /></ProtectedRoute>} />

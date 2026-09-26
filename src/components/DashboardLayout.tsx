@@ -37,6 +37,9 @@ const teacherNav: NavItem[] = [
   { label: "Record Book", path: "/teacher/record-book", icon: BookOpen, section: "Tools" },
   { label: "Teaching AI", path: "/teacher/ai-assistant", icon: Sparkles, section: "Tools" },
   { label: "Verify Documents", path: "/teacher/verify", icon: ShieldCheck, section: "Tools" },
+  { label: "Payment Approvals", path: "/finance/approvals", icon: Receipt, section: "Finance" },
+  { label: "Fee Structure", path: "/finance/structure", icon: DollarSign, section: "Finance" },
+  { label: "Finance Reports", path: "/finance/reports", icon: BarChart3, section: "Finance" },
   { label: "Settings", path: "/teacher/profile", icon: Settings, section: "Account" },
 ];
 
@@ -75,6 +78,9 @@ const adminNav: NavItem[] = [
   { label: "Events", path: "/admin/events", icon: CalendarDays, section: "Engagement" },
   { label: "Fee Management", path: "/admin/fees", icon: DollarSign, section: "Finance" },
   { label: "Finance & Petty Cash", path: "/admin/finance", icon: Receipt, section: "Finance" },
+  { label: "Fee Structure", path: "/finance/structure", icon: DollarSign, section: "Finance" },
+  { label: "Payment Approvals", path: "/finance/approvals", icon: ShieldCheck, section: "Finance" },
+  { label: "Finance Reports", path: "/finance/reports", icon: BarChart3, section: "Finance" },
   { label: "Messages", path: "/admin/messages", icon: MessageSquare, section: "Communication" },
   { label: "Announcements", path: "/admin/announcements", icon: Bell, section: "Communication" },
   { label: "Homepage Updates", path: "/admin/homepage", icon: Newspaper, section: "CMS" },
