@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useFinanceAccess } from "@/hooks/useFinanceAccess";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -117,7 +118,9 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = role === "admin" ? adminNav : role === "teacher" ? teacherNav : role === "parent" ? parentNav : studentNav;
+  const fin = useFinanceAccess();
+  const baseNav = role === "admin" ? adminNav : role === "teacher" ? teacherNav : role === "parent" ? parentNav : studentNav;
+  const navItems = role === "teacher" && !fin.canView ? baseNav.filter((n) => !n.path.startsWith("/finance")) : baseNav;
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
   // Group nav items by section
