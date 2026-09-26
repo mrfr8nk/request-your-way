@@ -58,16 +58,22 @@ const ReceiptImageUpload = ({ value, onChange, folder = "petty-cash" }: ReceiptI
     return (
       <div className="space-y-2">
         <label className="text-xs font-medium text-muted-foreground">Proof of Payment</label>
-        <div className="relative group w-full rounded-lg overflow-hidden border border-border bg-muted">
-          <img src={value} alt="Receipt" className="w-full h-32 object-cover" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setPreviewOpen(true)}>
-              <ZoomIn className="w-4 h-4" />
+        <div className="w-full rounded-lg overflow-hidden border border-border bg-muted">
+          <button type="button" onClick={() => setPreviewOpen(true)} className="block w-full" aria-label="View receipt photo">
+            <img src={value} alt="Receipt" className="w-full h-40 object-cover" />
+          </button>
+          <div className="flex gap-2 p-2 bg-card">
+            <Button type="button" variant="secondary" size="sm" className="flex-1" onClick={() => setPreviewOpen(true)}>
+              <ZoomIn className="w-4 h-4 mr-1" /> View photo
             </Button>
-            <Button variant="destructive" size="sm" onClick={remove}>
+            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => captureRef.current?.click()} disabled={uploading}>
+              <Camera className="w-4 h-4 mr-1" /> Retake
+            </Button>
+            <Button type="button" variant="destructive" size="sm" onClick={remove} aria-label="Remove photo">
               <X className="w-4 h-4" />
             </Button>
           </div>
+          <input ref={captureRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
         </div>
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
           <DialogContent className="max-w-2xl p-2">
