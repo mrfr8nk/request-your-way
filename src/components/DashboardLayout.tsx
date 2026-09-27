@@ -85,6 +85,7 @@ const adminNav: NavItem[] = [
   { label: "Messages", path: "/admin/messages", icon: MessageSquare, section: "Communication" },
   { label: "Announcements", path: "/admin/announcements", icon: Bell, section: "Communication" },
   { label: "Homepage Updates", path: "/admin/homepage", icon: Newspaper, section: "CMS" },
+  { label: "Photo Gallery", path: "/admin/gallery", icon: Image, section: "CMS" },
   { label: "Staff Gallery", path: "/admin/staff-gallery", icon: Image, section: "CMS" },
   { label: "Access Codes", path: "/admin/codes", icon: Key, section: "System" },
   { label: "Student History", path: "/admin/student-history", icon: History, section: "System" },

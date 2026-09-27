@@ -1,29 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import heroBg from "@/assets/hero-bg.jpg";
-import aboutSchool from "@/assets/about-school.jpg";
-import galleryLab from "@/assets/gallery-lab.jpg";
-import gallerySports from "@/assets/gallery-sports.jpg";
-import galleryScience from "@/assets/gallery-science.jpg";
-import galleryAssembly from "@/assets/gallery-assembly.jpg";
-import galleryLibrary from "@/assets/gallery-library.jpg";
-import headmaster from "@/assets/headmaster.jpg";
 import EditorialPageHero from "@/components/EditorialPageHero";
 import { Reveal } from "@/components/motion/Reveal";
+import { supabase } from "@/integrations/supabase/client";
+import { resolveGalleryImage } from "@/lib/gallery-images";
 
 type GalleryCategory = "all" | "campus" | "academics" | "sports" | "events";
-
-const galleryItems = [
-  { img: heroBg, title: "School Campus", desc: "Aerial view of our beautiful campus", category: "campus" as GalleryCategory },
-  { img: aboutSchool, title: "Classroom Learning", desc: "Students engaged in interactive learning", category: "academics" as GalleryCategory },
-  { img: galleryLab, title: "Computer Lab", desc: "Students in our modern IT laboratory", category: "academics" as GalleryCategory },
-  { img: galleryScience, title: "Science Lab", desc: "Hands-on experiments in chemistry", category: "academics" as GalleryCategory },
-  { img: gallerySports, title: "Sports Day", desc: "Students competing on the sports field", category: "sports" as GalleryCategory },
-  { img: galleryAssembly, title: "School Assembly", desc: "Students during awards ceremony", category: "events" as GalleryCategory },
-  { img: galleryLibrary, title: "School Library", desc: "Students studying in the library", category: "academics" as GalleryCategory },
-  { img: headmaster, title: "Leadership", desc: "Our dedicated school leadership", category: "events" as GalleryCategory },
-];
+type Item = { img: string; title: string; desc: string; category: string };
 
 const categories: { label: string; value: GalleryCategory }[] = [
   { label: "All Photos", value: "all" },

@@ -20,8 +20,8 @@ const portalConfig: Record<PortalType, { label: string; icon: React.ElementType;
   admin: { label: "Administrator", icon: Shield, description: "Full system management access", color: "text-primary", bgColor: "bg-primary/10 border-primary/30" },
 };
 
-const Login = () => {
-  const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
+const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
+  const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(adminMode ? "admin" : null);
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -231,7 +231,7 @@ const Login = () => {
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
               <div className="relative flex justify-center text-xs uppercase"><span className="bg-muted/30 px-2 text-muted-foreground">or pick a portal</span></div>
             </div>
-            {(["student", "teacher", "parent", "admin"] as PortalType[]).map((portal) => {
+            {(["student", "teacher", "parent"] as PortalType[]).map((portal) => {
               const config = portalConfig[portal];
               return (
                 <Card
@@ -281,7 +281,7 @@ const Login = () => {
           /* Login Form */
           <div>
             <button
-              onClick={() => setSelectedPortal(null)}
+              onClick={() => adminMode ? navigate("/login") : setSelectedPortal(null)}
               className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1"
             >
               ← Choose different portal
