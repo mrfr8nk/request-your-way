@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, LogIn, Activity } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import LoginHistory from "@/components/LoginHistory";
 
 interface ActivityEntry {
   id: string;
@@ -13,7 +14,7 @@ interface ActivityEntry {
   created_at: string;
 }
 
-const AccountActivity = ({ showAll = false }: { showAll?: boolean }) => {
+const ActivityCard = ({ showAll = false }: { showAll?: boolean }) => {
   const { user } = useAuth();
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,5 +89,9 @@ const AccountActivity = ({ showAll = false }: { showAll?: boolean }) => {
     </Card>
   );
 };
+
+const AccountActivity = (props: { showAll?: boolean }) => (
+  <div className="space-y-6"><LoginHistory showAll={props.showAll} /><ActivityCard {...props} /></div>
+);
 
 export default AccountActivity;

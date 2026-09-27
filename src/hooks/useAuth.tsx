@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               details: `Email: ${sess.user.email} | ${new Date().toLocaleString()}`,
               entity_type: "auth",
             }).then(() => {});
+            supabase.functions.invoke("log-login", { body: { method: sess.user.app_metadata?.provider || "password" } }).catch(() => {});
           }, 500);
         }
       } else {

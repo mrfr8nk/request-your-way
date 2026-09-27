@@ -72,6 +72,7 @@ import AdminRecordBooks from "./pages/admin/AdminRecordBooks";
 import AdminStaffManagement from "./pages/admin/AdminStaffManagement";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminStudents from "./pages/admin/AdminStudents";
+import AdminGallery from "./pages/admin/AdminGallery";
 
 // Parent pages
 import ParentDashboard from "./pages/parent/ParentDashboard";
@@ -116,6 +117,8 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/auth/admin" element={<Login adminMode />} />
+              <Route path="/auth/admin/signup" element={<Signup adminMode />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-report" element={<VerifyReport />} />
@@ -172,6 +175,7 @@ const App = () => (
               <Route path="/admin/staff-management" element={<ProtectedRoute allowedRoles={["admin"]}><AdminStaffManagement /></ProtectedRoute>} />
               <Route path="/admin/student-history" element={<ProtectedRoute allowedRoles={["admin"]}><AdminStudentHistory /></ProtectedRoute>} />
               <Route path="/admin/security" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSecurity /></ProtectedRoute>} />
+              <Route path="/admin/gallery" element={<ProtectedRoute allowedRoles={["admin"]}><AdminGallery /></ProtectedRoute>} />
               <Route path="/admin/students" element={<ProtectedRoute allowedRoles={["admin"]}><AdminStudents /></ProtectedRoute>} />
 
               {/* Parent Portal */}

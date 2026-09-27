@@ -20,6 +20,7 @@ import FeeStructureCard from "@/components/admin/fees/FeeStructureCard";
 import FeeStatsCards from "@/components/admin/fees/FeeStatsCards";
 import AddFeeForm from "@/components/admin/fees/AddFeeForm";
 import FeeRecordsTable from "@/components/admin/fees/FeeRecordsTable";
+import ClassFeeBreakdown from "@/components/admin/fees/ClassFeeBreakdown";
 import FeeCharts from "@/components/admin/fees/FeeCharts";
 import PaymentDialog from "@/components/admin/fees/PaymentDialog";
 import { DEFAULT_FEE_STRUCTURE, DEFAULT_ZIG_RATE, PAYMENT_METHODS, methodLabel } from "@/components/admin/fees/FeeConstants";
@@ -444,8 +445,9 @@ Kindly settle at your earliest convenience to avoid interruption of services. Re
         </Card>
 
         <Tabs defaultValue="active">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="active">Records ({filtered.length})</TabsTrigger>
+            <TabsTrigger value="byclass">By Class / Status</TabsTrigger>
             <TabsTrigger value="deleted">Deleted ({deletedFees.length})</TabsTrigger>
             <TabsTrigger value="scholarships">Scholarships ({activeScholarships.length})</TabsTrigger>
           </TabsList>
@@ -482,6 +484,10 @@ Kindly settle at your earliest convenience to avoid interruption of services. Re
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="byclass">
+            <ClassFeeBreakdown feeRecords={feeRecords} students={students} studentProfiles={studentProfiles} classes={classes} />
           </TabsContent>
 
           <TabsContent value="scholarships">

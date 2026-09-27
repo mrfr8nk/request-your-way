@@ -21,8 +21,8 @@ const roleConfig: Record<SignupRole, { label: string; icon: React.ElementType; d
   admin: { label: "Administrator", icon: Shield, description: "Register as admin — access code required", color: "text-primary", bgColor: "bg-primary/10 border-primary/30", requiresCode: true },
 };
 
-const Signup = () => {
-  const [selectedRole, setSelectedRole] = useState<SignupRole | null>(null);
+const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
+  const [selectedRole, setSelectedRole] = useState<SignupRole | null>(adminMode ? "admin" : null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -600,7 +600,7 @@ const Signup = () => {
 
         {!selectedRole ? (
           <div className="space-y-4">
-            {(["student", "parent", "teacher", "admin"] as SignupRole[]).map((role) => {
+            {(["student", "parent", "teacher"] as SignupRole[]).map((role) => {
               const config = roleConfig[role];
               return (
                 <Card key={role} className={`cursor-pointer transition-all hover:shadow-card-hover border-2 hover:scale-[1.02] ${config.bgColor}`} onClick={() => setSelectedRole(role)}>
