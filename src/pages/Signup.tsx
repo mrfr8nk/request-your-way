@@ -630,7 +630,7 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
           </div>
         ) : (
           <div>
-            <button onClick={() => { setSelectedRole(null); setOtpStep("form"); setOtpCode(""); }} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1">← Choose different role</button>
+            <button onClick={() => { if (adminMode) { navigate("/signup"); return; } setSelectedRole(null); setOtpStep("form"); setOtpCode(""); }} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1">← Choose different role</button>
 
             {/* Student — email OTP verification */}
             {selectedRole === "student" && (

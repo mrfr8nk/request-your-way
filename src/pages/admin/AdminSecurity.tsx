@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import LoginHistory from "@/components/LoginHistory";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ const AdminSecurity = () => {
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
+        <LoginHistory showAll />
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
