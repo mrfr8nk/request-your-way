@@ -90,6 +90,11 @@ const ParentReports = () => {
         }));
         setChildren(merged);
         if (!selectedChild && merged.length > 0) setSelectedChild(merged[0].id);
+        // Jump to the most recent term that actually has marks
+        const { data: latest } = await supabase.from("grades").select("term, academic_year")
+          .in("student_id", ids).is("deleted_at", null)
+          .order("academic_year", { ascending: false }).order("term", { ascending: false }).limit(1);
+        if (latest?.[0]) { setTerm(latest[0].term); setYear(latest[0].academic_year); }
       }
       setLoading(false);
     };
@@ -122,13 +127,17 @@ const ParentReports = () => {
         promises.push(Promise.resolve(supabase.from("student_profiles").select("user_id").eq("class_id", child.sp.class_id).eq("is_active", true)));
       }
 
-      const results = await Promise.all(promises);
+      const [results, schRes] = await Promise.all([
+        Promise.all(promises),
+        supabase.from("scholarships").select("coverage_percentage").eq("student_id", selectedChild).eq("is_active", true),
+      ]);
       
       setGrades(results[0].data || []);
       
       let bal = 0;
       (results[1].data || []).forEach((f: any) => { bal += Math.max(0, Number(f.amount_due) - Number(f.amount_paid)); });
-      setFeeBalance(bal);
+      const fullScholarship = (schRes.data || []).some((s: any) => Number(s.coverage_percentage) >= 100);
+      setFeeBalance(fullScholarship ? 0 : bal);
       
       if (level && results[2]) setGradingScales((results[2].data as GradingScale[]) || []);
       
