@@ -42,7 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (roleRes.data) setRole(roleRes.data.role as AppRole);
-    if (profileRes.data) setProfile(profileRes.data);
+    if (profileRes.data) {
+      setProfile(profileRes.data);
+    } else {
+      // Self-heal: create a missing profile so the user shows by name everywhere
+      const { data: { user: u } } = await supabase.auth.getUser();
+      const full_name = (u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split("@")[0] || "") as string;
+      const { data: created } = await supabase.from("profiles")
+        .insert({ user_id: userId, full_name, email: u?.email ?? null })
+        .select("full_name, email, avatar_url, is_banned").maybeSingle();
+      if (created) setProfile(created);
+    }
   };
 
   useEffect(() => {
