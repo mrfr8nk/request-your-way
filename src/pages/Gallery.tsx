@@ -20,6 +20,14 @@ const categories: { label: string; value: GalleryCategory }[] = [
 const Gallery = () => {
   const [activeCategory, setActiveCategory] = useState<GalleryCategory>("all");
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [galleryItems, setGalleryItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    supabase.from("gallery_items").select("*").eq("is_active", true).order("display_order")
+      .then(({ data }) => setGalleryItems((data || []).map((g: any) => ({
+        img: resolveGalleryImage(g.image_url), title: g.title, desc: g.description || "", category: g.category,
+      }))));
+  }, []);
 
   const filtered = activeCategory === "all"
     ? galleryItems
