@@ -90,6 +90,11 @@ const ParentReports = () => {
         }));
         setChildren(merged);
         if (!selectedChild && merged.length > 0) setSelectedChild(merged[0].id);
+        // Jump to the most recent term that actually has marks
+        const { data: latest } = await supabase.from("grades").select("term, academic_year")
+          .in("student_id", ids).is("deleted_at", null)
+          .order("academic_year", { ascending: false }).order("term", { ascending: false }).limit(1);
+        if (latest?.[0]) { setTerm(latest[0].term); setYear(latest[0].academic_year); }
       }
       setLoading(false);
     };
