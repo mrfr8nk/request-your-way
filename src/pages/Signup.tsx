@@ -407,27 +407,21 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
           placeholder="e.g. STM20260001"
           value={childStudentId}
           onChange={async (e) => {
-            const val = e.target.value;
+            const val = e.target.value.toUpperCase();
             setChildStudentId(val);
             setChildLookupResult(null);
-            if (val.trim().length >= 3) {
-              const { data } = await supabase
-                .from("student_profiles")
-                .select("user_id, student_id, form, level")
-                .eq("student_id", val.trim())
-                .single();
-              if (data) {
-                const { data: profile } = await supabase
-                  .from("profiles")
-                  .select("full_name")
-                  .eq("user_id", data.user_id)
-                  .single();
-                setChildLookupResult(profile?.full_name ? `✓ Found: ${profile.full_name} (Form ${data.form})` : `✓ Student found (Form ${data.form})`);
-              } else {
-                setChildLookupResult("✗ No student found with this ID");
-              }
+            const trimmed = val.trim();
+            if (trimmed.length >= 6) {
+              const { data } = await supabase.rpc("check_student_id" as any, { _student_id: trimmed });
+              const r = data as any;
+              // ignore stale responses
+              if (trimmed !== (document.querySelector<HTMLInputElement>('input[data-child-id]')?.value || "").trim()) return;
+              setChildLookupResult(r?.found
+                ? `✓ Valid Student ID${r.first_name ? ` — ${r.first_name}` : ""} (Form ${r.form})`
+                : "✗ No student found with this ID");
             }
           }}
+          data-child-id
         />
         {childLookupResult && (
           <p className={`text-xs mt-1 ${childLookupResult.startsWith("✓") ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>

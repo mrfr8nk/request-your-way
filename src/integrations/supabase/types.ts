@@ -1984,6 +1984,7 @@ export type Database = {
         Returns: string
       }
       can_view_finance: { Args: { _user_id: string }; Returns: boolean }
+      check_student_id: { Args: { _student_id: string }; Returns: Json }
       consume_access_code: {
         Args: { _code: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: Json
