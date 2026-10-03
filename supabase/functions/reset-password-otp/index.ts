@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppOtp } from "../_shared/whatsapp-otp.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,22 +53,8 @@ serve(async (req) => {
       if (method === 'whatsapp') {
         const phone = body.phone || profile.phone;
         if (!phone) throw new Error('No phone number on file. Use email instead.');
-        const token = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
-        const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
-        if (!token || !phoneId) throw new Error('WhatsApp not configured');
-        const message = `🔐 *St. Mary's High School*\n\nYour password reset code is:\n\`\`\`${code}\`\`\`\n\n⏳ Expires in 10 minutes.\n\nIf you didn't request this, please ignore.\n\n*Tip:* Tap and hold the code above to copy it.\n──────────\n`;
-        const waRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: normalizePhone(phone),
-            type: 'text',
-            text: { body: message },
-          }),
-        });
-        const waJson = await waRes.json();
-        if (!waRes.ok) throw new Error(waJson?.error?.message || 'WhatsApp send failed');
+        const message = `🔐 *St. Mary's High School*\n\nYour password reset code is:\n\`\`\`${code}\`\`\`\n\n⏳ Expires in 10 minutes.\n\nIf you didn't request this, please ignore.`;
+        await sendWhatsAppOtp(phone, code, message);
       } else {
         const emailFnUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-branded-email`;
         const r = await fetch(emailFnUrl, {
