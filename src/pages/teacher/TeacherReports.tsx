@@ -82,6 +82,7 @@ const TeacherReports = () => {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   const [classTeacherClasses, setClassTeacherClasses] = useState<any[]>([]);
+  const autoJumpedFor = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -120,6 +121,19 @@ const TeacherReports = () => {
         .eq("term", term as any)
         .eq("academic_year", year)
         .is("deleted_at", null);
+      // If nothing for this term, jump once to the latest term that has marks
+      if ((!gradesData || gradesData.length === 0) && autoJumpedFor.current !== selectedClassId) {
+        autoJumpedFor.current = selectedClassId;
+        const { data: latest } = await supabase.from("grades")
+          .select("term, academic_year").in("student_id", ids).is("deleted_at", null)
+          .order("academic_year", { ascending: false }).order("term", { ascending: false }).limit(1);
+        if (latest?.[0] && (latest[0].term !== term || latest[0].academic_year !== year)) {
+          setTerm(latest[0].term);
+          setYear(latest[0].academic_year);
+          return;
+        }
+      }
+      autoJumpedFor.current = selectedClassId;
       setGrades(gradesData || []);
     };
     fetchData();
@@ -372,7 +386,7 @@ const TeacherReports = () => {
                       ) : (
                         <span className="text-sm text-muted-foreground">—</span>
                       )}
-                      <Badge variant="secondary">{studentGrades.length} subjects</Badge>
+                      <Badge variant="secondary">{new Set(studentGrades.map(g => g.subject_id)).size} subjects</Badge>
                       <Button variant="outline" size="sm" onClick={() => previewReport(s)}>
                         <Eye className="w-4 h-4 mr-1" /> Preview
                       </Button>
