@@ -2022,6 +2022,10 @@ export type Database = {
         }[]
       }
       record_db_heartbeat: { Args: { _source?: string }; Returns: undefined }
+      verify_parent_child_match: {
+        Args: { _email: string; _phone: string; _student_id: string }
+        Returns: Json
+      }
       verify_report_by_serial: {
         Args: { _serial: string }
         Returns: {

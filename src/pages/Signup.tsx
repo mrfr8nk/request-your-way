@@ -11,6 +11,7 @@ import { UserPlus, GraduationCap, BookOpen, Shield, Send, Loader2, CheckCircle, 
 import schoolLogo from "@/assets/school-logo.png";
 import PhoneInput from "@/components/PhoneInput";
 import AuthShell from "@/components/AuthShell";
+import PasswordInput, { isPasswordValid } from "@/components/PasswordInput";
 
 type SignupRole = "student" | "teacher" | "parent" | "admin";
 
@@ -217,6 +218,10 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
   const handleCodeSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRole) return;
+    if (!isPasswordValid(password)) {
+      toast({ title: "Weak Password", description: "Use 8+ characters with a letter and a number.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -284,6 +289,19 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
     if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
       toast({ title: "Weak Password", description: "Include at least one letter and one number.", variant: "destructive" });
       return;
+    }
+    if (selectedRole === "parent") {
+      const { data: v } = await supabase.rpc("verify_parent_child_match" as any, { _student_id: childStudentId, _phone: phone, _email: email });
+      const r = v as any;
+      if (!r?.ok) {
+        const msg: Record<string, string> = {
+          missing: "Enter your child's Student ID.",
+          not_found: "No student found with that Student ID.",
+          mismatch: "Your phone or email doesn't match the guardian details on this student's record. Contact the school to update them.",
+        };
+        toast({ title: "Can't verify child", description: msg[r?.error] || "Verification failed.", variant: "destructive" });
+        return;
+      }
     }
     if (otpMethod === "whatsapp" && (!phone || phone.replace(/\D/g, "").length < 9)) {
       toast({ title: "Phone Required", description: "Enter your WhatsApp phone number to receive the code.", variant: "destructive" });
@@ -381,8 +399,8 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
 
   const parentChildLinkFields = (
     <div className="border-t border-border pt-3 space-y-3">
-      <p className="text-sm font-semibold text-foreground">Link to Your Child (Optional)</p>
-      <p className="text-xs text-muted-foreground">Enter your child's Student ID to auto-link. Your phone or email must match the guardian info on the student's profile.</p>
+      <p className="text-sm font-semibold text-foreground">Link to Your Child *</p>
+      <p className="text-xs text-muted-foreground">Required. Enter your child's Student ID. Your phone number or email must match the guardian details the school has on record — this stops anyone linking to a child that isn't theirs.</p>
       <div>
         <label className="text-sm font-medium text-foreground">Child's Student ID</label>
         <Input
@@ -660,7 +678,7 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Password *</label>
-                      <Input type="password" placeholder="Minimum 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                      <PasswordInput value={password} onChange={setPassword} />
                     </div>
                     {studentPersonalFields}
                     {classSelectField}
@@ -716,7 +734,7 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Password *</label>
-                      <Input type="password" placeholder="Minimum 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                      <PasswordInput value={password} onChange={setPassword} />
                     </div>
                     {parentChildLinkFields}
                     {otpMethodPicker}
@@ -777,7 +795,7 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Password *</label>
-                      <Input type="password" placeholder="Minimum 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                      <PasswordInput value={password} onChange={setPassword} />
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Creating account..." : `Create ${roleConfig[selectedRole].label} Account`}
