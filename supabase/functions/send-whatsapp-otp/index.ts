@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppOtp } from "../_shared/whatsapp-otp.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,6 +39,16 @@ serve(async (req) => {
 
     if (message_only) {
       message = String(message_only);
+      const waRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),
+      });
+      if (!waRes.ok) {
+        const waJson = await waRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: waJson?.error?.message || 'WhatsApp send failed' }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     } else {
       if (!email) {
         return new Response(JSON.stringify({ error: 'email is required for OTP' }),
@@ -54,25 +65,13 @@ serve(async (req) => {
         key: otpKey,
         value: JSON.stringify({ code, expires }),
       });
-      message = `🔐 *St. Mary's High School*\n\nYour verification code is:\n\`\`\`${code}\`\`\`\n\n⏳ Expires in 10 minutes.\n\nIf you didn't request this, please ignore.\n\n*Tip:* Tap and hold the code above to copy it.\n──────────\n`;
-    }
-
-    const waRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: message },
-      }),
-    });
-
-    const waJson = await waRes.json();
-    if (!waRes.ok) {
-      console.error('WA send failed', waJson);
-      return new Response(JSON.stringify({ error: waJson?.error?.message || 'WhatsApp send failed' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      message = `🔐 *St. Mary's High School*\n\nYour verification code is:\n\`\`\`${code}\`\`\`\n\n⏳ Expires in 10 minutes.\n\nIf you didn't request this, please ignore.`;
+      try {
+        await sendWhatsAppOtp(phone, code, message);
+      } catch (err) {
+        return new Response(JSON.stringify({ error: (err as Error).message }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     return new Response(JSON.stringify({ success: true, to }),
