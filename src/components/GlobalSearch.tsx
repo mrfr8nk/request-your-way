@@ -39,6 +39,16 @@ const adminFeatures: SearchItem[] = [
   { label: "Record Books", description: "View teacher record books", path: "/admin/record-books", icon: BookOpen, keywords: ["records", "books"], category: "Academic" },
   { label: "Student History", description: "View student academic history", path: "/admin/student-history", icon: History, keywords: ["records", "past", "archive", "history"], category: "Academic" },
   { label: "AI Security", description: "AI-powered threat detection & monitoring", path: "/admin/security", icon: ShieldAlert, keywords: ["security", "threats", "alerts", "suspicious", "anomaly", "hack", "breach"], category: "System" },
+  { label: "Students", description: "Student records, status & graduation", path: "/admin/students", icon: GraduationCap, keywords: ["learners", "pupils", "ungraduate", "reactivate", "deactivate", "transfer", "graduated"], category: "Management" },
+  { label: "Photo Gallery", description: "Edit public gallery photos", path: "/admin/gallery", icon: Image, keywords: ["photos", "pictures", "images", "gallery"], category: "Content" },
+  { label: "Fee Structure", description: "Fee items per form & term, invoices", path: "/finance/structure", icon: DollarSign, keywords: ["levy", "tuition", "invoice", "charges", "fee items"], category: "Finance" },
+  { label: "Payment Approvals", description: "Approve parent proof of payment", path: "/finance/approvals", icon: Receipt, keywords: ["proof", "approve", "reject", "pending", "ecocash", "bank"], category: "Finance" },
+  { label: "Finance Reports", description: "Collections, outstanding, bursar roles", path: "/finance/reports", icon: BarChart3, keywords: ["report", "outstanding", "collections", "bursar", "headmaster", "csv"], category: "Finance" },
+  { label: "Timetable", description: "Class timetables", path: "/admin/timetable", icon: ClipboardCheck, keywords: ["schedule", "periods", "lessons"], category: "Academic" },
+  { label: "Library", description: "Books & loans", path: "/admin/library", icon: BookOpen, keywords: ["books", "borrow", "loan", "return"], category: "Academic" },
+  { label: "Events", description: "School calendar & events", path: "/admin/events", icon: Bell, keywords: ["calendar", "sports day", "meeting", "event"], category: "Communication" },
+  { label: "Behaviour", description: "Merit & demerit points", path: "/admin/behavior", icon: Trophy, keywords: ["discipline", "merit", "demerit", "points", "behavior"], category: "Academic" },
+  { label: "Login History", description: "Sign-ins with IP & location", path: "/admin/security", icon: ShieldAlert, keywords: ["ip", "login", "location", "device", "sign in"], category: "System" },
   { label: "Settings", description: "System & school settings", path: "/admin/settings", icon: Settings, keywords: ["config", "system", "school name", "preferences", "promote"], category: "System" },
 ];
 
