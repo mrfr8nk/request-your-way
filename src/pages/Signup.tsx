@@ -437,40 +437,7 @@ const Signup = ({ adminMode = false }: { adminMode?: boolean }) => {
   );
 
   // Reusable OTP delivery method picker
-  const otpMethodPicker = (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Send verification code via</label>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setOtpMethod("email")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-            otpMethod === "email"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-background text-muted-foreground hover:border-primary/50"
-          }`}
-        >
-          <Mail className="w-4 h-4" /> Email
-        </button>
-        <button
-          type="button"
-          onClick={() => setOtpMethod("whatsapp")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-            otpMethod === "whatsapp"
-              ? "border-green-600 bg-green-600/10 text-green-700 dark:text-green-400"
-              : "border-border bg-background text-muted-foreground hover:border-green-600/50"
-          }`}
-        >
-          <MessageCircle className="w-4 h-4" /> WhatsApp
-        </button>
-      </div>
-      {otpMethod === "whatsapp" && (
-        <p className="text-xs text-muted-foreground">
-          Make sure your phone above is correct and connected to WhatsApp.
-        </p>
-      )}
-    </div>
-  );
+  const otpMethodPicker = null; // WhatsApp codes disabled until Meta template approved
   if (otpStep === "otp") {
     return (
       <AuthShell quote="Join a community of scholars, mentors, and friends — for life." attribution="— Verify your account">

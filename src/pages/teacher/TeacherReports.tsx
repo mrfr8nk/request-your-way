@@ -100,13 +100,12 @@ const TeacherReports = () => {
   const uniqueClasses = Array.from(assignmentClassMap.values()).filter(Boolean);
 
   // Fetch grading scales when class changes
+  const selectedLevel = (uniqueClasses.find((c: any) => c.id === selectedClassId) as any)?.level as string | undefined;
   useEffect(() => {
-    if (!selectedClassId) return;
-    const cls = uniqueClasses.find((c: any) => c.id === selectedClassId);
-    const level = cls?.level || "o_level";
-    supabase.from("grading_scales").select("*").eq("level", level)
+    if (!selectedClassId || !selectedLevel) return;
+    supabase.from("grading_scales").select("*").eq("level", selectedLevel as any)
       .then(({ data }) => setGradingScales(data || []));
-  }, [selectedClassId, assignments]);
+  }, [selectedClassId, selectedLevel]);
 
   useEffect(() => {
     if (!selectedClassId) return;
@@ -144,8 +143,13 @@ const TeacherReports = () => {
     if (sorted.length > 0) {
       return sorted.map(s => `<td><strong>${s.grade_letter}</strong> ${s.min_mark}-${s.max_mark}</td>`).join("");
     }
-    return '<td><strong>A</strong> 70-100</td><td><strong>B</strong> 60-69</td><td><strong>C</strong> 50-59</td><td><strong>D</strong> 40-49</td><td><strong>U</strong> 0-39</td>';
-  }, [gradingScales]);
+    const defaults: Record<string, string[][]> = {
+      a_level: [["A","76-100"],["B","67-75"],["C","55-66"],["D","45-54"],["E","35-44"],["O","0-34"]],
+      zjc: [["A","75-100"],["B","65-74"],["C","50-64"],["D","40-49"],["U","0-39"]],
+      o_level: [["A","70-100"],["B","60-69"],["C","50-59"],["D","40-49"],["U","0-39"]],
+    };
+    return (defaults[selectedLevel || "o_level"] || defaults.o_level).map(([l, r]) => `<td><strong>${l}</strong> ${r}</td>`).join("");
+  }, [gradingScales, selectedLevel]);
 
   const buildReportHtml = useCallback(async (student: any) => {
     const studentGrades = grades.filter(g => g.student_id === student.user_id);

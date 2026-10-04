@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Send, Plus, Search } from "lucide-react";
+import { MessageSquare, Send, Plus, Search, ArrowLeft } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
@@ -287,13 +287,13 @@ const MessagesPage = () => {
   const typingNames = Array.from(typingUsers).map(uid => getName(uid));
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-10rem)]">
+    <div className="flex md:gap-4 h-[calc(100dvh-9rem)] -mx-2 md:mx-0">
       {/* Conversation List */}
-      <Card className="w-80 shrink-0 flex flex-col">
-        <CardHeader className="p-3 border-b border-border">
+      <Card className={`${selectedConv ? "hidden md:flex" : "flex"} w-full md:w-80 shrink-0 flex-col overflow-hidden rounded-none md:rounded-xl`}>
+        <CardHeader className="p-3 border-b border-border bg-primary text-primary-foreground">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Chats</CardTitle>
-            <Button size="sm" variant="ghost" onClick={() => setNewDialogOpen(true)}><Plus className="w-4 h-4" /></Button>
+            <Button size="sm" variant="ghost" className="hover:bg-primary-foreground/10 text-primary-foreground" onClick={() => setNewDialogOpen(true)}><Plus className="w-4 h-4" /></Button>
           </div>
         </CardHeader>
         <ScrollArea className="flex-1">
@@ -309,14 +309,14 @@ const MessagesPage = () => {
                 <button
                   key={conv.id}
                   onClick={() => setSelectedConv(conv)}
-                  className={`w-full text-left px-3 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors ${selectedConv?.id === conv.id ? "bg-primary/10" : ""}`}
+                  className={`w-full text-left px-4 py-3.5 border-b border-border/50 active:bg-muted hover:bg-muted/50 transition-colors ${selectedConv?.id === conv.id ? "bg-primary/10" : ""}`}
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       {otherId && getAvatar(otherId) ? (
-                        <img src={getAvatar(otherId)!} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        <img src={getAvatar(otherId)!} alt="" className="w-11 h-11 rounded-full object-cover" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                        <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                           {getConvName(conv).charAt(0)}
                         </div>
                       )}
@@ -339,11 +339,12 @@ const MessagesPage = () => {
       </Card>
 
       {/* Messages Area */}
-      <Card className="flex-1 flex flex-col">
+      <Card className={`${selectedConv ? "flex" : "hidden md:flex"} flex-1 flex-col overflow-hidden rounded-none md:rounded-xl`}>
         {selectedConv ? (
           <>
-            <CardHeader className="p-3 border-b border-border">
+            <CardHeader className="p-2.5 border-b border-border bg-primary text-primary-foreground">
               <div className="flex items-center gap-2">
+                <Button size="icon" variant="ghost" className="md:hidden h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setSelectedConv(null)} aria-label="Back to chats"><ArrowLeft className="w-5 h-5" /></Button>
                 <div className="relative">
                   {getOtherUserId(selectedConv) && getAvatar(getOtherUserId(selectedConv)) ? (
                     <img src={getAvatar(getOtherUserId(selectedConv))!} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -358,13 +359,13 @@ const MessagesPage = () => {
                 </div>
                 <div>
                   <CardTitle className="text-base">{getConvName(selectedConv)}</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    {getOtherUserId(selectedConv) && onlineUsers.has(getOtherUserId(selectedConv)) ? "Online" : "Offline"}
+                  <p className="text-xs opacity-80">
+                    {typingNames.length > 0 ? "typing…" : getOtherUserId(selectedConv) && onlineUsers.has(getOtherUserId(selectedConv)) ? "Online" : "Offline"}
                   </p>
                 </div>
               </div>
             </CardHeader>
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 px-3 py-4 bg-muted/40">
               <div className="space-y-3">
                 {messages.map(msg => (
                   <MessageBubble
@@ -382,7 +383,7 @@ const MessagesPage = () => {
                 <div ref={bottomRef} />
               </div>
             </ScrollArea>
-            <div className="border-t border-border p-3">
+            <div className="border-t border-border p-2 bg-card">
               {pendingImage && (
                 <div className="mb-2 relative inline-block">
                   <img src={pendingImage} className="h-20 rounded-lg object-cover" />
@@ -399,9 +400,9 @@ const MessagesPage = () => {
                   value={newMessage}
                   onChange={e => { setNewMessage(e.target.value); broadcastTyping(); }}
                   onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  className="flex-1"
+                  className="flex-1 rounded-full bg-muted border-0"
                 />
-                <Button onClick={sendMessage} disabled={!newMessage.trim() && !pendingImage}><Send className="w-4 h-4" /></Button>
+                <Button size="icon" className="rounded-full shrink-0" onClick={sendMessage} disabled={!newMessage.trim() && !pendingImage}><Send className="w-4 h-4" /></Button>
               </div>
             </div>
           </>

@@ -225,23 +225,8 @@ const ForgotPassword = () => {
                   <p className="text-muted-foreground text-sm">Choose where to receive your reset code.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMethod("email")}
-                    className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition ${method === "email" ? "border-primary bg-primary/5" : "border-border"}`}
-                  >
-                    <Mail className="h-5 w-5" />
-                    <span className="text-sm font-medium">Email</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMethod("whatsapp")}
-                    className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition ${method === "whatsapp" ? "border-primary bg-primary/5" : "border-border"}`}
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    <span className="text-sm font-medium">WhatsApp</span>
-                  </button>
+                <div className="hidden">
+                  <MessageCircle className="h-5 w-5" />
                 </div>
 
                 <div className="space-y-3">

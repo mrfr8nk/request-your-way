@@ -143,7 +143,7 @@ const AdminUsers = () => {
   const handleTransferStudent = async (userId: string, currentlyActive: boolean) => {
     const action = currentlyActive ? "transfer (deactivate)" : "reactivate";
     if (!confirm(`Are you sure you want to ${action} this student?`)) return;
-    const { error } = await supabase.from("student_profiles").update({ is_active: !currentlyActive }).eq("user_id", userId);
+    const { error } = await supabase.from("student_profiles").update(currentlyActive ? { is_active: false } : { is_active: true, graduation_status: null } as any).eq("user_id", userId);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       toast({ title: currentlyActive ? "Student Transferred" : "Student Reactivated" });
