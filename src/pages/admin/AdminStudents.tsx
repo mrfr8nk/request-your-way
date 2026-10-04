@@ -142,7 +142,7 @@ const AdminStudents = () => {
 
   const handleToggleActive = async (userId: string, currentlyActive: boolean) => {
     if (!confirm(`${currentlyActive ? "Deactivate" : "Reactivate"} this student?`)) return;
-    await supabase.from("student_profiles").update({ is_active: !currentlyActive }).eq("user_id", userId);
+    await supabase.from("student_profiles").update(currentlyActive ? { is_active: false } : { is_active: true, graduation_status: null } as any).eq("user_id", userId);
     toast({ title: currentlyActive ? "Student Deactivated" : "Student Reactivated" });
     fetchData(); setDetailOpen(false);
   };
@@ -431,8 +431,8 @@ const AdminStudents = () => {
                       )}
                     </div>
                     <Button variant={selectedStudent.is_active === false ? "outline" : "destructive"} size="sm"
-                      onClick={() => handleToggleActive(selectedStudent.user_id, selectedStudent.is_active !== false)}>
-                      {selectedStudent.is_active === false ? "Reactivate" : "Deactivate"}
+                      onClick={() => handleToggleActive(selectedStudent.user_id, selectedStudent.graduation_status === "graduated" ? false : selectedStudent.is_active !== false)}>
+                      {selectedStudent.graduation_status === "graduated" ? "Ungraduate & Reactivate" : selectedStudent.is_active === false ? "Reactivate" : "Deactivate"}
                     </Button>
                   </div>
 
