@@ -122,8 +122,9 @@ Deno.serve(async (req) => {
         await admin.from("student_profiles").update({ is_active: false, graduation_status: "graduated", updated_at: now }).eq("id", p.s.id);
         graduated++;
       } else {
+        // Keep the student's class_id so they stay in their class after promotion
         await admin.from("student_profiles").update({
-          level: p.to!.level, form: p.to!.form, class_id: null,
+          level: p.to!.level, form: p.to!.form, class_id: p.s.class_id,
           graduation_status: p.to!.level !== p.s.level ? "promoted" : null, updated_at: now,
         }).eq("id", p.s.id);
         promoted++;
