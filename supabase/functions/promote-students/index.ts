@@ -2,139 +2,141 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Define the max form per level
-const MAX_FORM: Record<string, number> = {
-  zjc: 2,      // Form 1-2
-  o_level: 4,  // Form 3-4 (Form 4 = final, students graduate)
-  a_level: 6,  // Form 5-6
-};
-
+const MAX_FORM: Record<string, number> = { zjc: 2, o_level: 4, a_level: 6 };
 const NEXT_LEVEL: Record<string, { level: string; form: number } | null> = {
   zjc: { level: "o_level", form: 3 },
-  o_level: null, // Form 4 students graduate — A-level enrollment is manual
-  a_level: null,  // Form 6 students graduate
+  o_level: null,
+  a_level: null,
 };
+const SNAPSHOT_KEY = "last_promotion_snapshot";
+const json = (b: unknown, status = 200) =>
+  new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization");
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Verify caller is admin
-    const supabaseUser = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    
-    const { data: { user } } = await supabaseUser.auth.getUser();
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
     if (!user) throw new Error("Not authenticated");
-
-    const { data: role } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .single();
-    
+    const { data: role } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!role) throw new Error("Admin access required");
 
-    const { academic_year } = await req.json();
-    if (!academic_year) throw new Error("academic_year is required");
+    const body = await req.json().catch(() => ({}));
+    const { academic_year, action = "promote", level, form, class_id } = body;
 
-    // Get all active students
-    const { data: students, error: fetchErr } = await supabaseAdmin
-      .from("student_profiles")
-      .select("id, user_id, form, level, is_active, class_id")
-      .eq("is_active", true);
-
-    if (fetchErr) throw fetchErr;
-    if (!students || students.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, promoted: 0, graduated: 0, message: "No active students found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // ---- Status of last snapshot ----
+    if (action === "status") {
+      const { data } = await admin.from("system_settings").select("value, updated_at").eq("key", SNAPSHOT_KEY).maybeSingle();
+      if (!data) return json({ snapshot: null });
+      const snap = JSON.parse(data.value);
+      return json({ snapshot: { at: snap.at, count: snap.rows?.length || 0, filters: snap.filters, undone: !!snap.undone } });
     }
 
-    let promoted = 0;
-    let graduated = 0;
+    // ---- Undo ----
+    if (action === "undo") {
+      const { data } = await admin.from("system_settings").select("value").eq("key", SNAPSHOT_KEY).maybeSingle();
+      if (!data) throw new Error("No promotion to undo");
+      const snap = JSON.parse(data.value);
+      if (snap.undone) throw new Error("Last promotion was already undone");
+      for (const r of snap.rows) {
+        await admin.from("student_profiles").update({
+          form: r.form, level: r.level, class_id: r.class_id, is_active: r.is_active,
+          graduation_status: r.graduation_status, updated_at: new Date().toISOString(),
+        }).eq("id", r.id);
+      }
+      snap.undone = true;
+      await admin.from("system_settings").update({ value: JSON.stringify(snap), updated_at: new Date().toISOString(), updated_by: user.id }).eq("key", SNAPSHOT_KEY);
+      await admin.from("activity_log").insert({
+        user_id: user.id, action: `Undid last promotion (${snap.rows.length} students restored)`,
+        entity_type: "promotion", details: `Snapshot from ${snap.at}`,
+      });
+      return json({ success: true, restored: snap.rows.length });
+    }
 
-    for (const student of students) {
-      const maxForm = MAX_FORM[student.level] || 6;
+    // ---- Select students with filters ----
+    let q = admin.from("student_profiles").select("id, user_id, student_id, form, level, is_active, class_id, graduation_status").eq("is_active", true);
+    if (level) q = q.eq("level", level);
+    if (form) q = q.eq("form", Number(form));
+    if (class_id) q = q.eq("class_id", class_id);
+    const { data: students, error } = await q;
+    if (error) throw error;
+    const list = students || [];
 
-      if (student.form >= maxForm) {
-        // Check if there's a next level
-        const next = NEXT_LEVEL[student.level];
-        if (next) {
-          // Promote to next level
-          await supabaseAdmin
-            .from("student_profiles")
-            .update({
-              level: next.level,
-              form: next.form,
-              class_id: null, // Reset class - admin assigns new class
-              graduation_status: "promoted",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", student.id);
-          promoted++;
-        } else {
-          // Graduate (final level, final form)
-          await supabaseAdmin
-            .from("student_profiles")
-            .update({
-              is_active: false,
-              graduation_status: "graduated",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", student.id);
-          graduated++;
-        }
+    const ids = list.map((s) => s.user_id);
+    const { data: profs } = ids.length
+      ? await admin.from("profiles").select("user_id, full_name").in("user_id", ids)
+      : { data: [] as any[] };
+    const nameMap: Record<string, string> = {};
+    (profs || []).forEach((p: any) => (nameMap[p.user_id] = p.full_name));
+
+    const plan = list.map((s) => {
+      const max = MAX_FORM[s.level] || 6;
+      if (s.form >= max) {
+        const next = NEXT_LEVEL[s.level];
+        if (next) return { s, outcome: "promoted", to: { level: next.level, form: next.form } };
+        return { s, outcome: "graduated", to: null };
+      }
+      return { s, outcome: "promoted", to: { level: s.level, form: s.form + 1 } };
+    });
+
+    if (action === "preview") {
+      return json({
+        total: plan.length,
+        promoted: plan.filter((p) => p.outcome === "promoted").length,
+        graduated: plan.filter((p) => p.outcome === "graduated").length,
+        students: plan.map((p) => ({
+          student_id: p.s.student_id, name: nameMap[p.s.user_id] || "—",
+          from: `${p.s.level} F${p.s.form}`, outcome: p.outcome,
+          to: p.to ? `${p.to.level} F${p.to.form}` : "Graduated",
+        })),
+      });
+    }
+
+    if (!academic_year) throw new Error("academic_year is required");
+    if (plan.length === 0) return json({ success: true, promoted: 0, graduated: 0, message: "No matching students" });
+
+    // Save snapshot BEFORE changing anything
+    const snapshot = {
+      at: new Date().toISOString(), by: user.id, academic_year,
+      filters: { level: level || null, form: form || null, class_id: class_id || null },
+      rows: list.map((s) => ({ id: s.id, form: s.form, level: s.level, class_id: s.class_id, is_active: s.is_active, graduation_status: s.graduation_status })),
+    };
+    const { error: snapErr } = await admin.from("system_settings").upsert(
+      { key: SNAPSHOT_KEY, value: JSON.stringify(snapshot), updated_at: new Date().toISOString(), updated_by: user.id },
+      { onConflict: "key" },
+    );
+    if (snapErr) throw new Error("Could not save undo snapshot: " + snapErr.message);
+
+    let promoted = 0, graduated = 0;
+    for (const p of plan) {
+      const now = new Date().toISOString();
+      if (p.outcome === "graduated") {
+        await admin.from("student_profiles").update({ is_active: false, graduation_status: "graduated", updated_at: now }).eq("id", p.s.id);
+        graduated++;
       } else {
-        // Simple form promotion within same level
-        await supabaseAdmin
-          .from("student_profiles")
-          .update({
-            form: student.form + 1,
-            class_id: null, // Reset class
-            graduation_status: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", student.id);
+        await admin.from("student_profiles").update({
+          level: p.to!.level, form: p.to!.form, class_id: null,
+          graduation_status: p.to!.level !== p.s.level ? "promoted" : null, updated_at: now,
+        }).eq("id", p.s.id);
         promoted++;
       }
     }
 
-    // Log the activity
-    await supabaseAdmin.from("activity_log").insert({
-      user_id: user.id,
-      action: `Promoted ${promoted} students, graduated ${graduated} students for ${academic_year}`,
-      entity_type: "promotion",
-      details: `Academic year: ${academic_year}. Promoted: ${promoted}, Graduated: ${graduated}`,
+    await admin.from("activity_log").insert({
+      user_id: user.id, action: `Promoted ${promoted} students, graduated ${graduated} students for ${academic_year}`,
+      entity_type: "promotion", details: `Filters: ${JSON.stringify(snapshot.filters)}. Promoted: ${promoted}, Graduated: ${graduated}`,
     });
-
-    return new Response(
-      JSON.stringify({ success: true, promoted, graduated, total: students.length }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ success: true, promoted, graduated, total: plan.length });
   } catch (error) {
-    console.error("Error in promote-students:", error);
-    return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("promote-students:", error);
+    return json({ error: (error as Error).message }, 500);
   }
 });
