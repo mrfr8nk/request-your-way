@@ -15,6 +15,7 @@ import AvatarUpload from "@/components/AvatarUpload";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignatureManager from "@/components/SignatureManager";
 import BiometricEnrollment from "@/components/BiometricEnrollment";
+import PromotionManager from "@/components/admin/PromotionManager";
 
 const AdminSettings = () => {
   const { user, profile } = useAuth();
@@ -399,51 +400,7 @@ const AdminSettings = () => {
           </CardContent>
         </Card>
 
-        {/* Student Promotion */}
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="w-5 h-5" /> Student Year-End Promotion</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Promote all active students to the next form at year-end. Students at the final form of their level will either move to the next level or be marked as <strong>graduated</strong>.
-            </p>
-            <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-              <p>• Form 1 → 2, Form 2 → 3 (ZJC → O Level), Form 3 → 4</p>
-              <p>• Form 4 → <strong>Graduated</strong> (O Level complete — A Level enrollment is manual)</p>
-              <p>• Form 5 → 6</p>
-              <p>• Form 6 → <strong>Graduated</strong> (deactivated)</p>
-              <p className="text-xs text-muted-foreground mt-2">Class assignments will be reset — you'll reassign students to new classes after promotion.</p>
-            </div>
-            {promotionResult && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm">
-                <p className="font-medium text-green-700 dark:text-green-300">Last promotion: {promotionResult.promoted} promoted, {promotionResult.graduated} graduated</p>
-              </div>
-            )}
-            <Button onClick={() => setPromoteConfirmOpen(true)} disabled={promoting} variant="default" className="bg-amber-600 hover:bg-amber-700 text-white">
-              {promoting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Promoting...</> : <><ArrowUpRight className="w-4 h-4 mr-2" /> Promote All Students</>}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Promote Confirm Dialog */}
-        <Dialog open={promoteConfirmOpen} onOpenChange={setPromoteConfirmOpen}>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="flex items-center gap-2 text-amber-600"><AlertTriangle className="w-5 h-5" /> Confirm Student Promotion</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                <strong>This will promote ALL active students</strong> to the next form. Final-year students (Form 6 A Level) will be marked as graduated and deactivated.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                This action is intended for <strong>year-end use only</strong>. Make sure all reports, grades, and fees are finalized before proceeding.
-              </p>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setPromoteConfirmOpen(false)}>Cancel</Button>
-                <Button className="flex-1 bg-amber-600 hover:bg-amber-700 text-white" onClick={handlePromote}>
-                  <GraduationCap className="w-4 h-4 mr-2" /> Confirm Promotion
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <PromotionManager academicYear={currentSession?.academic_year || new Date().getFullYear()} />
 
         {/* Report Signatures */}
         <SignatureManager mode="admin" />
