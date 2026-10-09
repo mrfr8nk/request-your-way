@@ -85,37 +85,11 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
 
   const resolveEmail = async (input: string): Promise<string | null> => {
     const trimmed = input.trim();
-    // If it looks like a student ID (e.g. STM20260001), look up the email
-    if (/^STM\d+$/i.test(trimmed)) {
-      const { data: sp } = await supabase
-        .from("student_profiles")
-        .select("user_id")
-        .ilike("student_id", trimmed)
-        .limit(1)
-        .single();
-      if (!sp) return null;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("user_id", sp.user_id)
-        .single();
-      return profile?.email || null;
-    }
-    // If it looks like a teacher ID (e.g. TCH20260001), look up the email
-    if (/^TCH\d+$/i.test(trimmed)) {
-      const { data: tp } = await supabase
-        .from("teacher_profiles")
-        .select("user_id")
-        .ilike("employee_id", trimmed)
-        .limit(1)
-        .single();
-      if (!tp) return null;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("user_id", tp.user_id)
-        .single();
-      return profile?.email || null;
+    // Student ID (STM...) or Teacher ID (TCH...) — look up the email securely
+    if (/^(STM|TCH)\d+$/i.test(trimmed)) {
+      const { data, error } = await supabase.rpc("lookup_email_by_id", { _id: trimmed });
+      if (error || !data) return null;
+      return data as string;
     }
     return trimmed;
   };
