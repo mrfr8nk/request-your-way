@@ -319,11 +319,11 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-foreground">
-                      {selectedPortal === "student" ? "Email or Student ID" : "Email"}
+                      {selectedPortal === "student" ? "Email or Student ID" : selectedPortal === "teacher" ? "Email or Teacher ID" : "Email"}
                     </label>
                     <Input
                       type="text"
-                      placeholder={selectedPortal === "student" ? "email or STM20260001" : "your.email@stmaryshigh.edu.zw"}
+                      placeholder={selectedPortal === "student" ? "email or STM20260001" : selectedPortal === "teacher" ? "email or TCH20260001" : "your.email@stmaryshigh.edu.zw"}
                       value={loginId}
                       onChange={(e) => setLoginId(e.target.value)}
                       required
