@@ -101,6 +101,22 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
         .single();
       return profile?.email || null;
     }
+    // If it looks like a teacher ID (e.g. TCH20260001), look up the email
+    if (/^TCH\d+$/i.test(trimmed)) {
+      const { data: tp } = await supabase
+        .from("teacher_profiles")
+        .select("user_id")
+        .ilike("employee_id", trimmed)
+        .limit(1)
+        .single();
+      if (!tp) return null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("user_id", tp.user_id)
+        .single();
+      return profile?.email || null;
+    }
     return trimmed;
   };
 
