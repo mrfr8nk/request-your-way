@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.lookup_email_by_id(text) TO service_role;

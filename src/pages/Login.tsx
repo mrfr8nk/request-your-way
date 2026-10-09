@@ -85,21 +85,11 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
 
   const resolveEmail = async (input: string): Promise<string | null> => {
     const trimmed = input.trim();
-    // If it looks like a student ID (e.g. STM20260001), look up the email
-    if (/^STM\d+$/i.test(trimmed)) {
-      const { data: sp } = await supabase
-        .from("student_profiles")
-        .select("user_id")
-        .ilike("student_id", trimmed)
-        .limit(1)
-        .single();
-      if (!sp) return null;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("user_id", sp.user_id)
-        .single();
-      return profile?.email || null;
+    // Student ID (STM...) or Teacher ID (TCH...) — look up the email securely
+    if (/^(STM|TCH)\d+$/i.test(trimmed)) {
+      const { data, error } = await supabase.rpc("lookup_email_by_id", { _id: trimmed });
+      if (error || !data) return null;
+      return data as string;
     }
     return trimmed;
   };
@@ -111,7 +101,7 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
 
     const email = await resolveEmail(loginId);
     if (!email) {
-      toast({ title: "Login Failed", description: "Student ID not found. Please check and try again.", variant: "destructive" });
+      toast({ title: "Login Failed", description: "ID not found. Please check your Student or Teacher ID and try again.", variant: "destructive" });
       setLoading(false);
       return;
     }
@@ -303,11 +293,11 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-foreground">
-                      {selectedPortal === "student" ? "Email or Student ID" : "Email"}
+                      {selectedPortal === "student" ? "Email or Student ID" : selectedPortal === "teacher" ? "Email or Teacher ID" : "Email"}
                     </label>
                     <Input
                       type="text"
-                      placeholder={selectedPortal === "student" ? "email or STM20260001" : "your.email@stmaryshigh.edu.zw"}
+                      placeholder={selectedPortal === "student" ? "email or STM20260001" : selectedPortal === "teacher" ? "email or TCH20260001" : "your.email@stmaryshigh.edu.zw"}
                       value={loginId}
                       onChange={(e) => setLoginId(e.target.value)}
                       required

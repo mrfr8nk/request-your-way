@@ -2013,6 +2013,7 @@ export type Database = {
         Args: { _parent_phone: string; _student_id: string }
         Returns: Json
       }
+      lookup_email_by_id: { Args: { _id: string }; Returns: string }
       lookup_student_for_linking: {
         Args: { _student_id: string }
         Returns: {
