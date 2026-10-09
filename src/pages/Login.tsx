@@ -127,7 +127,7 @@ const Login = ({ adminMode = false }: { adminMode?: boolean }) => {
 
     const email = await resolveEmail(loginId);
     if (!email) {
-      toast({ title: "Login Failed", description: "Student ID not found. Please check and try again.", variant: "destructive" });
+      toast({ title: "Login Failed", description: "ID not found. Please check your Student or Teacher ID and try again.", variant: "destructive" });
       setLoading(false);
       return;
     }
