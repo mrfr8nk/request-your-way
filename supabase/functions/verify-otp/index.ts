@@ -47,7 +47,10 @@ serve(async (req) => {
       });
     }
 
-    if (otpData.code !== otp_code.trim()) {
+    if (otpData.code !== String(otp_code).trim()) {
+      const attempts = (otpData.attempts || 0) + 1;
+      if (attempts >= 5) await supabase.from('system_settings').delete().eq('key', otpKey);
+      else await supabase.from('system_settings').update({ value: JSON.stringify({ ...otpData, attempts }) }).eq('key', otpKey);
       return new Response(JSON.stringify({ valid: false, error: 'Invalid code. Please try again.' }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

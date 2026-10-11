@@ -47,8 +47,17 @@ serve(async (req) => {
       user_id, email, full_name: full_name || '', phone: phone || null,
     }, { onConflict: 'user_id' });
 
-    // Role
-    await supabase.from('user_roles').insert({ user_id, role }).then(({ error }) => {
+    // Role — only self-service roles. Teacher/admin roles are granted ONLY through
+    // consume_access_code (requires a valid staff access code).
+    if (!['student', 'parent', 'teacher', 'admin'].includes(role)) {
+      return new Response(JSON.stringify({ error: 'Invalid role' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    // Account must be brand new (prevents re-using this endpoint on existing accounts)
+    const createdAt = new Date(userData.user.created_at).getTime();
+    if (Date.now() - createdAt > 30 * 60 * 1000) {
+      return new Response(JSON.stringify({ error: 'Signup window expired' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (role === 'student' || role === 'parent') await supabase.from('user_roles').insert({ user_id, role }).then(({ error }) => {
       if (error && !String(error.message).includes('duplicate')) warnings.push(`role: ${error.message}`);
     });
 

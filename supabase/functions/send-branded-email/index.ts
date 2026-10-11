@@ -1,3 +1,4 @@
+import { getCaller, isStaff, isAdminOrFinance, deny, safeRedirect } from "../_shared/guard.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // SMTP retired — using Resend via gateway
@@ -732,6 +733,22 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const body = await req.json();
     const { email, type, redirect_url, full_name, emails } = body;
+    // --- Access control: only these templates may be sent without signing in.
+    const caller = await getCaller(req);
+    const PUBLIC_TYPES = ['verification_otp', 'reset_password', 'welcome'];
+    if (!caller.isService) {
+      // Callers can never choose the code, skip storing it, or change the subject.
+      delete (body as any).otp_code; delete (body as any).skip_store; delete (body as any).subject_override;
+      if (!PUBLIC_TYPES.includes(type)) {
+        if (type === 'parent_link') { if (!caller.userId) return deny(corsHeaders, 401); }
+        else if (!isStaff(caller) && !isAdminOrFinance(caller)) return deny(corsHeaders, caller.userId ? 403 : 401);
+      }
+      if (type === 'welcome') {
+        // Welcome only to an account that really exists
+        const { data: pr } = await supabase.from('profiles').select('user_id').ilike('email', String(email || '')).maybeSingle();
+        if (!pr) return deny(corsHeaders, 403);
+      }
+    }
 
     // Bulk results notification
     if (type === 'results_available') {
@@ -770,7 +787,7 @@ serve(async (req) => {
           type: 'recovery',
           email,
           options: {
-            redirectTo: redirect_url ||
+            redirectTo: safeRedirect(redirect_url, 'https://stmarys.synapex.co.zw/reset-password') ||
               supabaseUrl.replace(
                 '.supabase.co',
                 '.lovableproject.com'

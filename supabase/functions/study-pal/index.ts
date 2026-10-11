@@ -1,3 +1,4 @@
+import { getCaller, isStaff, isAdminOrFinance, deny, safeRedirect } from "../_shared/guard.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,6 +8,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  { const c = await getCaller(req); if (!c.userId && !c.isService) return deny(corsHeaders, 401); }
 
   try {
     const { messages } = await req.json();
