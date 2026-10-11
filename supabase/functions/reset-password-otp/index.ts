@@ -97,7 +97,15 @@ serve(async (req) => {
         await supabase.from('system_settings').delete().eq('key', otpKeyFor(email));
         throw new Error('Code expired. Request a new one.');
       }
-      if (parsed.code !== otp) throw new Error('Invalid code.');
+      if (parsed.code !== otp) {
+        const attempts = (parsed.attempts || 0) + 1;
+        if (attempts >= 5) {
+          await supabase.from('system_settings').delete().eq('key', otpKeyFor(email));
+          throw new Error('Too many wrong attempts. Request a new code.');
+        }
+        await supabase.from('system_settings').update({ value: JSON.stringify({ ...parsed, attempts }) }).eq('key', otpKeyFor(email));
+        throw new Error('Invalid code.');
+      }
 
       const { error: updErr } = await supabase.auth.admin.updateUserById(parsed.user_id, {
         password: newPassword,
