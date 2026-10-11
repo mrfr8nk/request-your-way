@@ -1,3 +1,4 @@
+import { getCaller, isStaff, deny } from "../_shared/guard.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
@@ -10,6 +11,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+  { const c = await getCaller(req); if (!isStaff(c)) return deny(corsHeaders, c.userId ? 403 : 401); }
 
   try {
     const gmailEmail = Deno.env.get('GMAIL_EMAIL');

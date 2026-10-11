@@ -1,3 +1,4 @@
+import { getCaller, isStaff, isAdminOrFinance, deny, safeRedirect } from "../_shared/guard.ts";
 // Simple text-only WhatsApp sender used for reminders, alerts, etc.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +39,7 @@ async function sendText(to: string, body: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  { const c = await getCaller(req); if (!isAdminOrFinance(c) && !isStaff(c)) return deny(corsHeaders, c.userId ? 403 : 401); }
 
   try {
     const { phone, message, phones } = await req.json();
